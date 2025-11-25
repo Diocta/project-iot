@@ -3,113 +3,174 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#E8F3FA",
+    backgroundColor: "#F5F3FF",
     paddingTop: 50,
   },
 
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
     paddingHorizontal: 25,
-    marginBottom: 10,
+    marginBottom: 20,
   },
 
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
+  greeting: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#6B7280",
+    marginBottom: 5,
   },
 
-  name: {
-    fontSize: 32,
-    fontWeight: "800",
-  },
-
-  bellBtn: {
-    width: 44,
-    height: 44,
-    backgroundColor: "#0066FF",
-    borderRadius: 22,
-    justifyContent: "center",
+  weatherRow: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+    marginBottom: 2,
   },
 
-  sectionTitle: {
-    marginTop: 15,
-    marginLeft: 25,
-    fontSize: 18,
-    fontWeight: "700",
+  temp: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#1F2937",
   },
 
-  infoRow: {
-    marginTop: 10,
-    paddingHorizontal: 20,
+  subtitle: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    marginTop: 2,
+  },
+
+  profileBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: "hidden",
+    backgroundColor: "#E5E7EB",
+  },
+
+  profileImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  // Sweet Home Section
+  sweetHomeSection: {
+    paddingHorizontal: 25,
+    marginBottom: 25,
+  },
+
+  sweetHomeTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#1F2937",
+    marginBottom: 15,
+  },
+
+  quickAccessRow: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
 
-  weatherBox: {
+  quickAccessItem: {
     alignItems: "center",
+    width: "23%",
   },
 
-  weatherIcon: {
+  quickAccessIcon: {
     width: 50,
     height: 50,
-  },
-
-  weatherText: {
-    marginTop: 5,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  tempCenter: {
+    borderRadius: 25,
+    justifyContent: "center",
     alignItems: "center",
+    marginBottom: 8,
   },
 
-  tempNumber: {
-    fontSize: 28,
-    fontWeight: "800",
+  quickAccessText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#4B5563",
+    textAlign: "center",
   },
 
-  tempLabel: {
+  quickAccessStatus: {
+    fontSize: 10,
+    color: "#9CA3AF",
+    marginTop: 2,
+  },
+
+  // Rooms Section
+  roomsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 25,
+    marginBottom: 15,
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+
+  seeAllText: {
     fontSize: 14,
-    opacity: 0.7,
-  },
-
-  tempRight: {
-    alignItems: "center",
-  },
-
-  roomTabRow: {
-    marginTop: 20,
-    paddingLeft: 20,
-  },
-
-  roomBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    backgroundColor: "#DCE7F3",
-    borderRadius: 20,
-    marginRight: 10,
-  },
-
-  roomBtnActive: {
-    backgroundColor: "#fff",
-  },
-
-  roomBtnText: {
-    fontSize: 15,
+    color: "#7C3AED",
     fontWeight: "600",
-    color: "#666",
   },
 
-  roomBtnTextActive: {
-    color: "#000",
+  roomsGrid: {
+    paddingHorizontal: 25,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 30,
+  },
+
+  roomCard: {
+    width: "48%",
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 15,
+    minHeight: 120,
+  },
+
+  roomCardSelected: {
+    borderWidth: 3,
+    borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  roomName: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
+    marginTop: 12,
+  },
+
+  roomDevices: {
+    fontSize: 12,
+    color: "#fff",
+    opacity: 0.9,
+    marginTop: 4,
+  },
+
+  // Devices Section
+  devicesHeader: {
+    paddingHorizontal: 25,
+    marginBottom: 15,
   },
 
   grid: {
-    marginTop: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
@@ -117,29 +178,66 @@ export const styles = StyleSheet.create({
 
   card: {
     width: "48%",
-    padding: 20,
+    padding: 18,
     backgroundColor: "#fff",
     borderRadius: 20,
-    marginBottom: 20,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
-  cardIcon: {
-    width: 45,
-    height: 45,
-    marginBottom: 10,
+  deviceIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
   },
 
   cardTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 4,
   },
 
-  cardSubtitle: {
-    fontSize: 13,
-    opacity: 0.6,
+  cardStatus: {
+    fontSize: 12,
+    color: "#9CA3AF",
     marginBottom: 10,
   },
 
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#fff",
+    padding: 30,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+
+  modalText: {
+    marginTop: 15,
+    fontSize: 16,
+    textAlign: "center",
+    color: "#1F2937",
+  },
+
+  // Bottom Navigation
   bottomNav: {
     position: "absolute",
     bottom: 0,
@@ -150,32 +248,31 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#E5E7EB",
+    paddingBottom: 10,
   },
 
   navItem: {
     alignItems: "center",
-  },
-
-  navLabel: {
-    fontSize: 12,
-    opacity: 0.5,
-  },
-
-  navLabelActive: {
-    fontSize: 12,
-    color: "#0066FF",
-    fontWeight: "700",
+    justifyContent: "center",
+    padding: 10,
   },
 
   micBtn: {
     width: 60,
     height: 60,
-    backgroundColor: "#0066FF",
+    backgroundColor: "#7C3AED",
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
     marginTop: -30,
-    elevation: 5,
+    shadowColor: "#7C3AED",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });

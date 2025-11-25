@@ -2,20 +2,17 @@ import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
   Animated,
-  Dimensions,
   TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const { height } = Dimensions.get('window');
+import { styles } from '../styles/register.styles';
 
 interface RegisterScreenProps {
   onRegister: (name: string, email: string, password: string) => void;
@@ -26,6 +23,7 @@ export default function RegisterScreen({ onRegister, onSignIn }: RegisterScreenP
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -47,14 +45,18 @@ export default function RegisterScreen({ onRegister, onSignIn }: RegisterScreenP
   }, []);
 
   const handleRegister = () => {
-    onRegister(name, email, password);
+    if (name && email && password) {
+      onRegister(name, email, password);
+    }
   };
+
+  const isFormValid = name.trim() && email.trim() && password.trim();
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#2563EB" />
+      <StatusBar barStyle="light-content" backgroundColor="#7C3AED" />
       <LinearGradient
-        colors={['#2563EB', '#3B82F6', '#60A5FA']}
+        colors={['#7C3AED', '#8B5CF6', '#A78BFA']}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -66,8 +68,9 @@ export default function RegisterScreen({ onRegister, onSignIn }: RegisterScreenP
           <Animated.View style={[styles.circle3, { opacity: fadeAnim }]} />
         </View>
 
+        {/* Back Button */}
         <TouchableOpacity style={styles.backButton} onPress={onSignIn}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
         <KeyboardAvoidingView
@@ -84,138 +87,114 @@ export default function RegisterScreen({ onRegister, onSignIn }: RegisterScreenP
               },
             ]}
           >
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Set up your account to start managing your Smart Home.
-            </Text>
-
-            {/* Name Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="person" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Full Name"
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                autoCapitalize="words"
-                value={name}
-                onChangeText={setName}
-              />
-            </View>
-            
-            {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email Address"
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>
+                Join us and start managing your smart home today
+              </Text>
             </View>
 
-            {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
+            {/* Form Container */}
+            <View style={styles.formContainer}>
+              {/* Name Input */}
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="person-outline" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your name"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    autoCapitalize="words"
+                    value={name}
+                    onChangeText={setName}
+                  />
+                </View>
+              </View>
+              
+              {/* Email Input */}
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail-outline" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your email"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                  />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Create a password"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <Ionicons 
+                      name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                      size={20} 
+                      color="rgba(255, 255, 255, 0.7)" 
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Password Hint */}
+              <Text style={styles.passwordHint}>
+                Password must be at least 6 characters
+              </Text>
             </View>
             
             {/* Register Button */}
             <TouchableOpacity
-              style={[styles.registerButton, { marginTop: 20 }]}
+              style={[styles.registerButton, !isFormValid && styles.registerButtonDisabled]}
               onPress={handleRegister}
               activeOpacity={0.9}
-              disabled={!name || !email || !password}
+              disabled={!isFormValid}
             >
               <LinearGradient
-                colors={['#FFFFFF', '#F0F9FF']}
+                colors={isFormValid ? ['#FFFFFF', '#FAFAFA'] : ['rgba(255, 255, 255, 0.5)', 'rgba(255, 255, 255, 0.5)']}
                 style={styles.buttonGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.registerTextButton}>Sign Up</Text>
-                <Ionicons name="arrow-forward" size={24} color="#3B82F6" />
+                <Text style={[styles.registerTextButton, !isFormValid && styles.registerTextDisabled]}>
+                  Create Account
+                </Text>
+                <Ionicons name="arrow-forward" size={24} color={isFormValid ? "#7C3AED" : "#A78BFA"} />
               </LinearGradient>
             </TouchableOpacity>
 
             {/* Sign In Link */}
             <View style={styles.signInContainer}>
-                <Text style={styles.signInText}>Already have an account? </Text>
-                <TouchableOpacity onPress={onSignIn}>
-                    <Text style={styles.signInLink}>Log In</Text>
-                </TouchableOpacity>
+              <Text style={styles.signInText}>Already have an account? </Text>
+              <TouchableOpacity onPress={onSignIn}>
+                <Text style={styles.signInLink}>Sign In</Text>
+              </TouchableOpacity>
             </View>
 
+            {/* Terms */}
+            <Text style={styles.termsText}>
+              By signing up, you agree to our{'\n'}
+              <Text style={styles.termsLink}>Terms of Service</Text> and <Text style={styles.termsLink}>Privacy Policy</Text>
+            </Text>
           </Animated.View>
         </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#2563EB' },
-  gradient: { flex: 1 },
-  backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 10 : 60,
-    left: 20,
-    zIndex: 10,
-    padding: 10,
-  },
-  circleContainer: { ...StyleSheet.absoluteFillObject },
-  circle1: {
-    position: 'absolute', width: 300, height: 300, borderRadius: 150,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', top: -100, right: -100,
-  },
-  circle2: {
-    position: 'absolute', width: 200, height: 200, borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', bottom: 100, left: -50,
-  },
-  circle3: {
-    position: 'absolute', width: 150, height: 150, borderRadius: 75,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)', top: height / 2, right: 20,
-  },
-  keyboardContainer: { flex: 1, justifyContent: 'center' },
-  content: {
-    justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, paddingVertical: 50,
-  },
-  title: {
-    fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 10, textAlign: 'center', letterSpacing: 1,
-  },
-  subtitle: {
-    fontSize: 16, color: 'rgba(255, 255, 255, 0.9)', textAlign: 'center', lineHeight: 24, marginBottom: 40, paddingHorizontal: 20,
-  },
-  inputContainer: {
-    flexDirection: 'row', alignItems: 'center', width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 12, marginBottom: 20,
-    paddingHorizontal: 15, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  inputIcon: { marginRight: 10 },
-  input: {
-    flex: 1, height: 55, color: '#FFFFFF', fontSize: 16, fontWeight: '500',
-  },
-  registerButton: {
-    width: '100%', marginBottom: 24, borderRadius: 16, shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 10,
-  },
-  buttonGradient: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 18, paddingHorizontal: 32, borderRadius: 16, gap: 12,
-  },
-  registerTextButton: {
-    fontSize: 18, fontWeight: 'bold', color: '#3B82F6',
-  },
-  signInContainer: { flexDirection: 'row', marginTop: 10 },
-  signInText: { fontSize: 14, color: 'rgba(255, 255, 255, 0.7)' },
-  signInLink: { fontSize: 14, fontWeight: 'bold', color: '#FFFFFF' }
-});
