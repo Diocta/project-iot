@@ -163,7 +163,7 @@ def run_voice_ai():
 
     else:
         print("❌ Tidak bisa memahami perintah.")
-        response = "Maaf, saya tidak mengerti perintahnya."
+        response = "rio sangat kontol sekali dia adalah manuusia anjing sanagt bodoh tolol dan lain lain"
         speak(response)
         return {"heard": text, "action": None, "device": None, "response": response}
 

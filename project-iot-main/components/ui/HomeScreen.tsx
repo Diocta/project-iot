@@ -1,79 +1,196 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { ActivityIndicator, Image, Modal, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+// components/ui/HomeScreen.tsx
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState, useRef } from "react";
+import { 
+  ActivityIndicator, 
+  Alert, 
+  Image, 
+  Modal, 
+  ScrollView, 
+  Switch, 
+  Text, 
+  TouchableOpacity, 
+  View 
+} from "react-native";
 import { styles } from "../styles/home.styles";
+import { mqttService, MQTT_TOPICS, SensorData } from "../../services/mqttService";
+
+// Device state yang persisten (tidak reset saat ganti room)
+interface DeviceStates {
+  lamp1: boolean;  // Living Room
+  lamp2: boolean;  // Bed Room 1
+  lamp3: boolean;  // Bed Room 2
+  lamp4: boolean;  // Garage
+  garage: boolean; // false = open, true = closed
+  clothesline: boolean; // false = inside, true = outside
+}
 
 const rooms = [
   { 
-    name: "Bed Room", 
-    devices: 7, 
+    name: "Lamp Rooms", 
+    devices: 4, 
     color: "#7C3AED", 
-    icon: "bed-outline",
-    deviceList: [
-      { id: 1, name: "Night Lamp", type: "bulb", status: true, color: "#FFF3E0", iconColor: "#FFA726" },
-      { id: 2, name: "AC", type: "snow", status: false, color: "#E1F5FE", iconColor: "#42A5F5" },
-      { id: 3, name: "Smart TV", type: "tv", status: true, color: "#E0F2F1", iconColor: "#26A69A" },
-      { id: 4, name: "Fan", type: "sync", status: false, color: "#F3E5F5", iconColor: "#AB47BC" },
-    ]
+    icon: "bulb-outline",
   },
   { 
-    name: "Kitchen Room", 
-    devices: 5, 
+    name: "Garage", 
+    devices: 2, 
     color: "#FFA726", 
-    icon: "restaurant-outline",
-    deviceList: [
-      { id: 1, name: "Ceiling Light", type: "bulb", status: true, color: "#FFF3E0", iconColor: "#FFA726" },
-      { id: 2, name: "Refrigerator", type: "snow", status: true, color: "#E1F5FE", iconColor: "#42A5F5" },
-      { id: 3, name: "Exhaust Fan", type: "sync", status: false, color: "#F3E5F5", iconColor: "#AB47BC" },
-      { id: 4, name: "Smart Plug", type: "power", status: true, color: "#E8F5E9", iconColor: "#66BB6A" },
-    ]
+    icon: "car-sport-outline",
   },
   { 
-    name: "Dining Room", 
-    devices: 8, 
+    name: "Clothesline", 
+    devices: 1, 
     color: "#A8E6CF", 
-    icon: "wine-outline",
-    deviceList: [
-      { id: 1, name: "Chandelier", type: "bulb", status: true, color: "#FFF3E0", iconColor: "#FFA726" },
-      { id: 2, name: "Wall Light", type: "bulb", status: true, color: "#FFF9C4", iconColor: "#FDD835" },
-      { id: 3, name: "AC", type: "snow", status: false, color: "#E1F5FE", iconColor: "#42A5F5" },
-      { id: 4, name: "Music System", type: "volume-high", status: false, color: "#FCE4EC", iconColor: "#EC407A" },
-    ]
+    icon: "shirt-outline",
   },
   { 
-    name: "Office Room", 
-    devices: 12, 
+    name: "Sensors", 
+    devices: 4, 
     color: "#81D4FA", 
-    icon: "desktop-outline",
-    deviceList: [
-      { id: 1, name: "Desk Lamp", type: "bulb", status: true, color: "#FFF3E0", iconColor: "#FFA726" },
-      { id: 2, name: "AC", type: "snow", status: true, color: "#E1F5FE", iconColor: "#42A5F5" },
-      { id: 3, name: "Smart Speaker", type: "volume-high", status: false, color: "#FCE4EC", iconColor: "#EC407A" },
-      { id: 4, name: "Monitor Light", type: "desktop", status: true, color: "#E0F2F1", iconColor: "#26A69A" },
-    ]
+    icon: "analytics-outline",
   },
 ];
 
 export default function HomeScreen() {
   const [selectedRoom, setSelectedRoom] = useState(rooms[0]);
-  const [devices, setDevices] = useState(selectedRoom.deviceList);
   const [modalVisible, setModalVisible] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // MQTT State
+  const [mqttConnected, setMqttConnected] = useState(false);
+  const [sensorData, setSensorData] = useState<SensorData>({
+    temperature: 0,
+    humidity: 0,
+    rain: 1,
+    light: 0,
+    lastUpdate: new Date(),
+  });
+
+  // Device States (Persistent)
+  const [deviceStates, setDeviceStates] = useState<DeviceStates>({
+    lamp1: false,
+    lamp2: false,
+    lamp3: false,
+    lamp4: false,
+    garage: false,
+    clothesline: false,
+  });
+
+  // Connect to MQTT on mount
+  useEffect(() => {
+    console.log('🚀 Starting MQTT connection...');
+    
+    mqttService.connect(
+      () => {
+        console.log('✅ Connected successfully!');
+        setMqttConnected(true);
+        Alert.alert('✅ Connected', 'MQTT connected successfully!');
+      },
+      (error) => {
+        console.error('❌ Connection error:', error);
+        setMqttConnected(false);
+        Alert.alert(
+          '❌ Connection Failed', 
+          `${error.message}\n\nMake sure:\n• Mosquitto is running\n• WebSocket port 9001 is open\n• Same WiFi network`
+        );
+      }
+    );
+
+    // Subscribe to messages
+    const unsubscribe = mqttService.onMessage((topic, message) => {
+      // Update sensor data
+      setSensorData(prev => {
+        const newData = { ...prev, lastUpdate: new Date() };
+        
+        switch (topic) {
+          case MQTT_TOPICS.TEMP:
+            newData.temperature = parseFloat(message) || 0;
+            break;
+          case MQTT_TOPICS.HUM:
+            newData.humidity = parseFloat(message) || 0;
+            break;
+          case MQTT_TOPICS.RAIN:
+            newData.rain = parseInt(message) || 1;
+            break;
+          case MQTT_TOPICS.LIGHT:
+            newData.light = parseInt(message) || 0;
+            break;
+        }
+        
+        return newData;
+      });
+    });
+
+    // Cleanup
+    return () => {
+      unsubscribe();
+      mqttService.disconnect();
+    };
+  }, []);
 
   const handleRoomSelect = (room: typeof rooms[0]) => {
     setSelectedRoom(room);
-    setDevices(room.deviceList);
   };
 
-  const toggleDevice = (deviceId: number) => {
-    setDevices(prevDevices =>
-      prevDevices.map(device =>
-        device.id === deviceId
-          ? { ...device, status: !device.status }
-          : device
-      )
-    );
+  // Control individual lamp
+  const toggleLamp = (lampNumber: 1 | 2 | 3 | 4) => {
+    if (!mqttConnected) {
+      Alert.alert('❌ Not Connected', 'Please wait for MQTT connection');
+      return;
+    }
+
+    const lampKey = `lamp${lampNumber}` as keyof DeviceStates;
+    const newState = !deviceStates[lampKey];
+
+    // Update local state immediately
+    setDeviceStates(prev => ({
+      ...prev,
+      [lampKey]: newState
+    }));
+
+    // Send MQTT command (sesuai dengan pin ESP32)
+    mqttService.publishLampControl(lampNumber, newState ? 'on' : 'off');
+    console.log(`💡 Lamp ${lampNumber}: ${newState ? 'ON' : 'OFF'}`);
+  };
+
+  // Control garage
+  const toggleGarage = () => {
+    if (!mqttConnected) {
+      Alert.alert('❌ Not Connected', 'Please wait for MQTT connection');
+      return;
+    }
+
+    const newState = !deviceStates.garage;
+    
+    setDeviceStates(prev => ({
+      ...prev,
+      garage: newState
+    }));
+
+    // false = open, true = closed
+    mqttService.publishGarageControl(newState ? 'close' : 'open');
+    console.log(`🚗 Garage: ${newState ? 'CLOSED' : 'OPEN'}`);
+  };
+
+  // Control clothesline
+  const toggleClothesline = () => {
+    if (!mqttConnected) {
+      Alert.alert('❌ Not Connected', 'Please wait for MQTT connection');
+      return;
+    }
+
+    const newState = !deviceStates.clothesline;
+    
+    setDeviceStates(prev => ({
+      ...prev,
+      clothesline: newState
+    }));
+
+    // false = inside, true = outside
+    mqttService.publishClotheslineControl(newState ? 'open' : 'close');
+    console.log(`👕 Clothesline: ${newState ? 'OUTSIDE' : 'INSIDE'}`);
   };
 
   const handleMicPress = async () => {
@@ -89,9 +206,9 @@ export default function HomeScreen() {
       setLoading(false);
 
       setTimeout(() => {
-        alert(
-          "Action: " + (data.action || "-") +
-          "\nDevice: " + (data.device || "-")
+        Alert.alert(
+          "Voice Command",
+          `Action: ${data.action || "-"}\nDevice: ${data.device || "-"}`
         );
         setModalVisible(false);
       }, 1000);
@@ -104,6 +221,232 @@ export default function HomeScreen() {
     }
   };
 
+  const renderDevicesByRoom = () => {
+    switch (selectedRoom.name) {
+      case "Lamp Rooms":
+        return (
+          <>
+            {/* Lamp 1 - Living Room */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#FFF3E0' }]}>
+                <Ionicons name="bulb" size={28} color="#FFA726" />
+              </View>
+              <Text style={styles.cardTitle}>Living Room</Text>
+              <Text style={[styles.cardStatus, { fontWeight: '600' }]}>
+                {deviceStates.lamp1 ? '💡 On' : '⚫ Off'}
+              </Text>
+              <Switch 
+                value={deviceStates.lamp1} 
+                onValueChange={() => toggleLamp(1)}
+                trackColor={{ false: '#D1D5DB', true: '#A78BFA' }}
+                thumbColor={deviceStates.lamp1 ? '#7C3AED' : '#f4f3f4'}
+              />
+            </View>
+
+            {/* Lamp 2 - Bed Room 1 */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#E1F5FE' }]}>
+                <Ionicons name="bulb" size={28} color="#42A5F5" />
+              </View>
+              <Text style={styles.cardTitle}>Bed Room 1</Text>
+              <Text style={[styles.cardStatus, { fontWeight: '600' }]}>
+                {deviceStates.lamp2 ? '💡 On' : '⚫ Off'}
+              </Text>
+              <Switch 
+                value={deviceStates.lamp2} 
+                onValueChange={() => toggleLamp(2)}
+                trackColor={{ false: '#D1D5DB', true: '#A78BFA' }}
+                thumbColor={deviceStates.lamp2 ? '#7C3AED' : '#f4f3f4'}
+              />
+            </View>
+
+            {/* Lamp 3 - Bed Room 2 */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#E0F2F1' }]}>
+                <Ionicons name="bulb" size={28} color="#26A69A" />
+              </View>
+              <Text style={styles.cardTitle}>Bed Room 2</Text>
+              <Text style={[styles.cardStatus, { fontWeight: '600' }]}>
+                {deviceStates.lamp3 ? '💡 On' : '⚫ Off'}
+              </Text>
+              <Switch 
+                value={deviceStates.lamp3} 
+                onValueChange={() => toggleLamp(3)}
+                trackColor={{ false: '#D1D5DB', true: '#A78BFA' }}
+                thumbColor={deviceStates.lamp3 ? '#7C3AED' : '#f4f3f4'}
+              />
+            </View>
+
+            {/* Lamp 4 - Garage */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#F3E5F5' }]}>
+                <Ionicons name="bulb" size={28} color="#AB47BC" />
+              </View>
+              <Text style={styles.cardTitle}>Garage</Text>
+              <Text style={[styles.cardStatus, { fontWeight: '600' }]}>
+                {deviceStates.lamp4 ? '💡 On' : '⚫ Off'}
+              </Text>
+              <Switch 
+                value={deviceStates.lamp4} 
+                onValueChange={() => toggleLamp(4)}
+                trackColor={{ false: '#D1D5DB', true: '#A78BFA' }}
+                thumbColor={deviceStates.lamp4 ? '#7C3AED' : '#f4f3f4'}
+              />
+            </View>
+          </>
+        );
+
+      case "Garage":
+        return (
+          <>
+            {/* Garage Gate */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#E3F2FD' }]}>
+                <Ionicons 
+                  name={deviceStates.garage ? "lock-closed" : "lock-open-outline"} 
+                  size={28} 
+                  color="#42A5F5" 
+                />
+              </View>
+              <Text style={styles.cardTitle}>Garage Gate</Text>
+              <Text style={[styles.cardStatus, { fontWeight: '600' }]}>
+                {deviceStates.garage ? "🔒 Closed" : "🔓 Open"}
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  { backgroundColor: deviceStates.garage ? "#10B981" : "#EF4444" }
+                ]}
+                onPress={toggleGarage}
+              >
+                <Ionicons 
+                  name={deviceStates.garage ? "arrow-up" : "arrow-down"} 
+                  size={20} 
+                  color="#fff" 
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.actionButtonText}>
+                  {deviceStates.garage ? "Buka" : "Tutup"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Lamp Garage */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#F3E5F5' }]}>
+                <Ionicons name="bulb" size={28} color="#AB47BC" />
+              </View>
+              <Text style={styles.cardTitle}>Lamp Garage</Text>
+              <Text style={[styles.cardStatus, { fontWeight: '600' }]}>
+                {deviceStates.lamp4 ? '💡 On' : '⚫ Off'}
+              </Text>
+              <Switch 
+                value={deviceStates.lamp4} 
+                onValueChange={() => toggleLamp(4)}
+                trackColor={{ false: '#D1D5DB', true: '#A78BFA' }}
+                thumbColor={deviceStates.lamp4 ? '#7C3AED' : '#f4f3f4'}
+              />
+            </View>
+          </>
+        );
+
+      case "Clothesline":
+        return (
+          <View style={styles.card}>
+            <View style={[styles.deviceIconContainer, { backgroundColor: '#F3E5F5' }]}>
+              <Ionicons 
+                name={deviceStates.clothesline ? "arrow-back-circle" : "arrow-forward-circle"} 
+                size={28} 
+                color="#AB47BC" 
+              />
+            </View>
+            <Text style={styles.cardTitle}>Clothesline</Text>
+            <Text style={[styles.cardStatus, { fontWeight: '600' }]}>
+              {deviceStates.clothesline ? "⬅️ Outside" : "➡️ Inside"}
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                { backgroundColor: deviceStates.clothesline ? "#8B5CF6" : "#F59E0B" }
+              ]}
+              onPress={toggleClothesline}
+            >
+              <Ionicons 
+                name={deviceStates.clothesline ? "arrow-forward" : "arrow-back"} 
+                size={20} 
+                color="#fff" 
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.actionButtonText}>
+                {deviceStates.clothesline ? "Masukkan" : "Keluarkan"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case "Sensors":
+        return (
+          <>
+            {/* Temperature */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#FFEBEE' }]}>
+                <Ionicons name="thermometer" size={28} color="#EF5350" />
+              </View>
+              <Text style={styles.cardTitle}>Temperature</Text>
+              <Text style={[styles.cardStatus, { fontSize: 20, fontWeight: 'bold', color: '#1F2937' }]}>
+                {sensorData.temperature.toFixed(1)}
+              </Text>
+              <Text style={styles.cardStatus}>°C</Text>
+            </View>
+
+            {/* Humidity */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#E1F5FE' }]}>
+                <Ionicons name="water" size={28} color="#42A5F5" />
+              </View>
+              <Text style={styles.cardTitle}>Humidity</Text>
+              <Text style={[styles.cardStatus, { fontSize: 20, fontWeight: 'bold', color: '#1F2937' }]}>
+                {sensorData.humidity.toFixed(0)}
+              </Text>
+              <Text style={styles.cardStatus}>%</Text>
+            </View>
+
+            {/* Rain Sensor */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#E8F5E9' }]}>
+                <Ionicons name="rainy" size={28} color="#66BB6A" />
+              </View>
+              <Text style={styles.cardTitle}>Rain Sensor</Text>
+              <Text style={[styles.cardStatus, { fontSize: 16, fontWeight: 'bold', color: '#1F2937' }]}>
+                {sensorData.rain === 0 ? "🌧️ Rain" : "☀️ Dry"}
+              </Text>
+            </View>
+
+            {/* Light Sensor */}
+            <View style={styles.card}>
+              <View style={[styles.deviceIconContainer, { backgroundColor: '#FFF3E0' }]}>
+                <Ionicons name="sunny" size={28} color="#FFA726" />
+              </View>
+              <Text style={styles.cardTitle}>Light Sensor</Text>
+              <Text style={[styles.cardStatus, { fontSize: 20, fontWeight: 'bold', color: '#1F2937' }]}>
+                {sensorData.light}
+              </Text>
+              <Text style={styles.cardStatus}>lux</Text>
+            </View>
+          </>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const formatTime = (date: Date) => {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -111,12 +454,24 @@ export default function HomeScreen() {
         {/* HEADER */}
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.greeting}>10.28</Text>
+            <Text style={styles.greeting}>Smart Home</Text>
             <View style={styles.weatherRow}>
-              <Ionicons name="rainy" size={20} color="#7C3AED" />
-              <Text style={styles.temp}>28°C</Text>
+              <Ionicons 
+                name={sensorData.rain === 0 ? "rainy" : "sunny"} 
+                size={20} 
+                color="#7C3AED" 
+              />
+              <Text style={styles.temp}>{sensorData.temperature.toFixed(1)}°C</Text>
             </View>
-            <Text style={styles.subtitle}>Today's Weather</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+              <View style={[
+                { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+                { backgroundColor: mqttConnected ? '#10B981' : '#EF4444' }
+              ]} />
+              <Text style={styles.subtitle}>
+                {mqttConnected ? 'Connected' : 'Disconnected'}
+              </Text>
+            </View>
           </View>
 
           <TouchableOpacity style={styles.profileBtn}>
@@ -127,45 +482,56 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* SWEET HOME SECTION */}
+        {/* SENSOR OVERVIEW */}
         <View style={styles.sweetHomeSection}>
-          <Text style={styles.sweetHomeTitle}>Sweet Home</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={styles.sweetHomeTitle}>Sensor Status</Text>
+            <Text style={{ fontSize: 12, color: '#6B7280' }}>
+              {formatTime(sensorData.lastUpdate)}
+            </Text>
+          </View>
           <View style={styles.quickAccessRow}>
-            <TouchableOpacity style={styles.quickAccessItem}>
-              <View style={[styles.quickAccessIcon, { backgroundColor: '#E3F2FD' }]}>
-                <Ionicons name="open-outline" size={24} color="#42A5F5" />
+            <View style={styles.quickAccessItem}>
+              <View style={[styles.quickAccessIcon, { backgroundColor: '#FFEBEE' }]}>
+                <Ionicons name="thermometer" size={24} color="#EF5350" />
               </View>
-              <Text style={styles.quickAccessText}>Front Door</Text>
-              <Text style={styles.quickAccessStatus}>Open</Text>
-            </TouchableOpacity>
+              <Text style={styles.quickAccessText}>Temp</Text>
+              <Text style={styles.quickAccessStatus}>{sensorData.temperature.toFixed(1)}°C</Text>
+            </View>
 
-            <TouchableOpacity style={styles.quickAccessItem}>
-              <View style={[styles.quickAccessIcon, { backgroundColor: '#FFF3E0' }]}>
-                <Ionicons name="bulb" size={24} color="#FFA726" />
+            <View style={styles.quickAccessItem}>
+              <View style={[styles.quickAccessIcon, { backgroundColor: '#E1F5FE' }]}>
+                <Ionicons name="water" size={24} color="#42A5F5" />
               </View>
-              <Text style={styles.quickAccessText}>2 Lights</Text>
-              <Text style={styles.quickAccessStatus}>On</Text>
-            </TouchableOpacity>
+              <Text style={styles.quickAccessText}>Humidity</Text>
+              <Text style={styles.quickAccessStatus}>{sensorData.humidity.toFixed(0)}%</Text>
+            </View>
 
-            <TouchableOpacity style={styles.quickAccessItem}>
+            <View style={styles.quickAccessItem}>
               <View style={[styles.quickAccessIcon, { backgroundColor: '#E8F5E9' }]}>
-                <Ionicons name="videocam" size={24} color="#66BB6A" />
+                <Ionicons 
+                  name={sensorData.rain === 0 ? "rainy" : "sunny"} 
+                  size={24} 
+                  color={sensorData.rain === 0 ? "#42A5F5" : "#FFA726"} 
+                />
               </View>
-              <Text style={styles.quickAccessText}>Cameras</Text>
-              <Text style={styles.quickAccessStatus}>Off</Text>
-            </TouchableOpacity>
+              <Text style={styles.quickAccessText}>Weather</Text>
+              <Text style={styles.quickAccessStatus}>
+                {sensorData.rain === 0 ? "Rain" : "Dry"}
+              </Text>
+            </View>
 
-            <TouchableOpacity style={styles.quickAccessItem}>
-              <View style={[styles.quickAccessIcon, { backgroundColor: '#F3E5F5' }]}>
-                <Ionicons name="wifi" size={24} color="#AB47BC" />
+            <View style={styles.quickAccessItem}>
+              <View style={[styles.quickAccessIcon, { backgroundColor: '#FFF3E0' }]}>
+                <Ionicons name="sunny" size={24} color="#FFA726" />
               </View>
-              <Text style={styles.quickAccessText}>WiFi</Text>
-              <Text style={styles.quickAccessStatus}>On</Text>
-            </TouchableOpacity>
+              <Text style={styles.quickAccessText}>Light</Text>
+              <Text style={styles.quickAccessStatus}>{sensorData.light}</Text>
+            </View>
           </View>
         </View>
 
-        {/* ROOMS SECTION */}
+        {/* ROOMS */}
         <View style={styles.roomsHeader}>
           <Text style={styles.sectionTitle}>Rooms</Text>
           <TouchableOpacity>
@@ -186,42 +552,27 @@ export default function HomeScreen() {
             >
               <Ionicons name={room.icon as any} size={32} color="#fff" />
               <Text style={styles.roomName}>{room.name}</Text>
-              <Text style={styles.roomDevices}>{room.devices} devices</Text>
+              <Text style={styles.roomDevices}>{room.devices} device{room.devices > 1 ? 's' : ''}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* DEVICES SECTION */}
+        {/* DEVICES */}
         <View style={styles.devicesHeader}>
-          <Text style={styles.sectionTitle}>Devices in {selectedRoom.name}</Text>
+          <Text style={styles.sectionTitle}>
+            {selectedRoom.name === "Sensors" ? "Sensor Data" : `Devices in ${selectedRoom.name}`}
+          </Text>
         </View>
 
         <View style={styles.grid}>
-          {devices.map((device) => (
-            <View key={device.id} style={styles.card}>
-              <View style={[styles.deviceIconContainer, { backgroundColor: device.color }]}>
-                <Ionicons name={device.type as any} size={28} color={device.iconColor} />
-              </View>
-              <Text style={styles.cardTitle}>{device.name}</Text>
-              <Text style={styles.cardStatus}>{device.status ? 'On' : 'Off'}</Text>
-              <Switch 
-                value={device.status} 
-                onValueChange={() => toggleDevice(device.id)}
-                trackColor={{ false: '#D1D5DB', true: '#A78BFA' }}
-                thumbColor={device.status ? '#7C3AED' : '#f4f3f4'}
-              />
-            </View>
-          ))}
+          {renderDevicesByRoom()}
         </View>
 
         <View style={{ height: 90 }} />
       </ScrollView>
 
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="fade"
-      >
+      {/* MODAL */}
+      <Modal visible={modalVisible} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             {loading && <ActivityIndicator size="large" color="#7C3AED" />}
@@ -230,25 +581,20 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* BOTTOM NAVIGATION */}
+      {/* BOTTOM NAV */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={26} color="#7C3AED" />
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="videocam" size={26} color="#9CA3AF" />
         </TouchableOpacity>
-
-        {/* CENTER MIC BUTTON */}
         <TouchableOpacity style={styles.micBtn} onPress={handleMicPress}>
           <Ionicons name="mic" size={32} color="#fff" />
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="stats-chart" size={26} color="#9CA3AF" />
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="person" size={26} color="#9CA3AF" />
         </TouchableOpacity>
