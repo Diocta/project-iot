@@ -1,9 +1,9 @@
 // services/mqttService.ts
-import Paho from 'paho-mqtt';
+import Paho from "paho-mqtt";
 
 // MQTT Configuration
 const MQTT_CONFIG = {
-  host: '10.203.142.56', // IP PC kamu
+  host: "10.203.142.56", // IP PC kamu
   port: 9001, // WebSocket port (PENTING: bukan 1883!)
   clientId: `expo_app_${Math.random().toString(16).slice(2, 8)}`,
 };
@@ -11,15 +11,20 @@ const MQTT_CONFIG = {
 // Topics - sama dengan ESP32
 export const MQTT_TOPICS = {
   // Sensor Topics (Subscribe)
-  TEMP: 'home/sensor/temp',
-  HUM: 'home/sensor/hum',
-  RAIN: 'home/sensor/rain',
-  LIGHT: 'home/sensor/light',
-  
-  // Control Topics (Publish)
-  CTRL_LAMP: 'home/control/lamp',
-  CTRL_SERVO_GARASI: 'home/control/servo/garasi',
-  CTRL_SERVO_JEMURAN: 'home/control/servo/jemuran',
+  TEMP: "home/sensor/temp",
+  HUM: "home/sensor/hum",
+  RAIN: "home/sensor/rain",
+  LIGHT: "home/sensor/light",
+
+  // Control Topics (Publish & Subscribe for feedback)
+  CTRL_LAMP: "home/control/lamp",
+  CTRL_SERVO_GARASI: "home/control/servo/garasi",
+  CTRL_SERVO_JEMURAN: "home/control/servo/jemuran",
+
+  // Feedback Topics (Subscribe to get actual device state)
+  FEEDBACK_LAMP: "home/feedback/lamp",
+  FEEDBACK_GARASI: "home/feedback/garasi",
+  FEEDBACK_JEMURAN: "home/feedback/jemuran",
 };
 
 export interface SensorData {
@@ -39,21 +44,21 @@ class MQTTService {
 
   connect(onConnected?: () => void, onError?: (error: Error) => void) {
     try {
-      console.log('🔌 Connecting to MQTT via WebSocket...');
+      console.log("🔌 Connecting to MQTT via WebSocket...");
       console.log(`   Host: ${MQTT_CONFIG.host}:${MQTT_CONFIG.port}`);
 
       // Create Paho MQTT client
       this.client = new Paho.Client(
         MQTT_CONFIG.host,
         MQTT_CONFIG.port,
-        '/mqtt',
+        "/mqtt",
         MQTT_CONFIG.clientId
       );
 
       // Connection lost callback
       this.client.onConnectionLost = (responseObject: any) => {
         this.connected = false;
-        console.log('❌ Connection Lost:', responseObject.errorMessage);
+        console.log("❌ Connection Lost:", responseObject.errorMessage);
         if (responseObject.errorCode !== 0) {
           onError?.(new Error(responseObject.errorMessage));
         }
@@ -66,7 +71,7 @@ class MQTTService {
         console.log(`📥 ${topic}: ${payload}`);
 
         // Notify all callbacks
-        this.messageCallbacks.forEach(callback => {
+        this.messageCallbacks.forEach((callback) => {
           callback(topic, payload);
         });
       };
@@ -78,7 +83,7 @@ class MQTTService {
         cleanSession: true,
         useSSL: false,
         onSuccess: () => {
-          console.log('✅ MQTT Connected!');
+          console.log("✅ MQTT Connected!");
           this.connected = true;
 
           // Subscribe to sensor topics
@@ -87,9 +92,12 @@ class MQTTService {
             MQTT_TOPICS.HUM,
             MQTT_TOPICS.RAIN,
             MQTT_TOPICS.LIGHT,
+            MQTT_TOPICS.FEEDBACK_LAMP,
+            MQTT_TOPICS.FEEDBACK_GARASI,
+            MQTT_TOPICS.FEEDBACK_JEMURAN,
           ];
 
-          topics.forEach(topic => {
+          topics.forEach((topic) => {
             this.client.subscribe(topic);
             console.log(`📫 Subscribed: ${topic}`);
           });
@@ -97,17 +105,16 @@ class MQTTService {
           onConnected?.();
         },
         onFailure: (error: any) => {
-          console.error('❌ Connection Failed:', error.errorMessage);
+          console.error("❌ Connection Failed:", error.errorMessage);
           this.connected = false;
-          onError?.(new Error(error.errorMessage || 'Connection failed'));
+          onError?.(new Error(error.errorMessage || "Connection failed"));
         },
       };
 
       // Connect
       this.client.connect(connectOptions);
-
     } catch (error) {
-      console.error('❌ MQTT Error:', error);
+      console.error("❌ MQTT Error:", error);
       onError?.(error as Error);
     }
   }
@@ -116,31 +123,35 @@ class MQTTService {
     if (this.client && this.connected) {
       this.client.disconnect();
       this.connected = false;
-      console.log('🔌 Disconnected');
+      console.log("🔌 Disconnected");
     }
   }
 
   onMessage(callback: MessageCallback) {
     this.messageCallbacks.push(callback);
     return () => {
-      this.messageCallbacks = this.messageCallbacks.filter(cb => cb !== callback);
+      this.messageCallbacks = this.messageCallbacks.filter(
+        (cb) => cb !== callback
+      );
     };
   }
 
-  publishLampControl(lampNumber: 1 | 2 | 3 | 4, state: 'on' | 'off') {
+  publishLampControl(lampNumber: 1 | 2 | 3 | 4, state: "on" | "off") {
     // Kirim command dengan format: "lamp_number:state"
     // Contoh: "1:1" = lamp 1 on, "2:0" = lamp 2 off
-    const message = `${lampNumber}:${state === 'on' ? '1' : '0'}`;
+    const message = `${lampNumber}:${state === "on" ? "1" : "0"}`;
     this.publish(MQTT_TOPICS.CTRL_LAMP, message);
   }
 
-  publishGarageControl(action: 'open' | 'close') {
-    const message = action === 'open' ? '1' : '0';
+  publishGarageControl(action: "open" | "close") {
+    // Convention: 1 = open, 0 = closed (align with frontend state mapping)
+    const message = action === "open" ? "1" : "0";
     this.publish(MQTT_TOPICS.CTRL_SERVO_GARASI, message);
   }
 
-  publishClotheslineControl(action: 'open' | 'close') {
-    const message = action === 'open' ? '1' : '0';
+  publishClotheslineControl(action: "open" | "close") {
+    // Convention: 1 = outside/open, 0 = inside/closed
+    const message = action === "open" ? "1" : "0";
     this.publish(MQTT_TOPICS.CTRL_SERVO_JEMURAN, message);
   }
 
@@ -151,7 +162,7 @@ class MQTTService {
       this.client.send(message);
       console.log(`📤 ${topic}: ${payload}`);
     } else {
-      console.error('❌ Not connected');
+      console.error("❌ Not connected");
     }
   }
 
