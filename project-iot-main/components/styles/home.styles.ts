@@ -3,99 +3,95 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F3FF",
+    backgroundColor: "#F9FAFB",
     paddingTop: 50,
   },
 
+  // Header Styles
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: 25,
-    marginBottom: 20,
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 24,
   },
-
   greeting: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginBottom: 5,
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 4,
   },
-
   weatherRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 2,
+    marginTop: 4,
   },
-
   temp: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#1F2937",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#7C3AED",
+    marginLeft: 6,
   },
-
   subtitle: {
     fontSize: 13,
-    color: "#9CA3AF",
+    color: "#6B7280",
     marginTop: 2,
   },
-
   profileBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    overflow: "hidden",
-    backgroundColor: "#E5E7EB",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-
   profileImage: {
-    width: "100%",
-    height: "100%",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
 
   // Sweet Home Section
   sweetHomeSection: {
-    paddingHorizontal: 25,
-    marginBottom: 25,
+    paddingHorizontal: 20,
+    marginBottom: 24,
   },
-
   sweetHomeTitle: {
-    fontSize: 24,
-    fontWeight: "800",
+    fontSize: 22,
+    fontWeight: "700",
     color: "#1F2937",
-    marginBottom: 15,
+    marginBottom: 16,
   },
-
   quickAccessRow: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
-
   quickAccessItem: {
     alignItems: "center",
-    width: "23%",
+    flex: 1,
   },
-
   quickAccessIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
-
   quickAccessText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
-    color: "#4B5563",
+    color: "#1F2937",
     textAlign: "center",
   },
-
   quickAccessStatus: {
-    fontSize: 10,
-    color: "#9CA3AF",
+    fontSize: 11,
+    color: "#6B7280",
     marginTop: 2,
   },
 
@@ -104,60 +100,48 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 25,
-    marginBottom: 15,
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
-
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: "#1F2937",
   },
-
   seeAllText: {
     fontSize: 14,
     color: "#7C3AED",
     fontWeight: "600",
   },
-
   roomsGrid: {
-    paddingHorizontal: 25,
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 30,
+    paddingHorizontal: 12,
+    marginBottom: 24,
   },
-
   roomCard: {
-    width: "48%",
+    width: "47%",
+    margin: 8,
     padding: 20,
     borderRadius: 20,
-    marginBottom: 15,
-    minHeight: 120,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-
   roomCardSelected: {
     borderWidth: 3,
     borderColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
-
   roomName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
     color: "#fff",
     marginTop: 12,
   },
-
   roomDevices: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#fff",
     opacity: 0.9,
     marginTop: 4,
@@ -165,114 +149,131 @@ export const styles = StyleSheet.create({
 
   // Devices Section
   devicesHeader: {
-    paddingHorizontal: 25,
-    marginBottom: 15,
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
-
   grid: {
-    paddingHorizontal: 25,
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    paddingHorizontal: 12,
   },
-
   card: {
-    width: "48%",
-    padding: 18,
+    width: "47%",
     backgroundColor: "#fff",
-    borderRadius: 20,
-    marginBottom: 15,
+    margin: 8,
+    padding: 16,
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+    alignItems: "center",
   },
-
   deviceIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
   },
-
   cardTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#1F2937",
     marginBottom: 4,
+    textAlign: "center",
+  },
+  cardStatus: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginBottom: 12,
   },
 
-  cardStatus: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginBottom: 10,
+  // Action Button (untuk gate dan clothesline)
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   // Modal
   modalOverlay: {
     flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
   },
-
   modalContent: {
-    width: "80%",
     backgroundColor: "#fff",
-    padding: 30,
-    borderRadius: 20,
+    padding: 24,
+    borderRadius: 16,
+    width: "80%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 5,
   },
-
   modalText: {
-    marginTop: 15,
     fontSize: 16,
-    textAlign: "center",
     color: "#1F2937",
+    marginTop: 16,
+    textAlign: "center",
   },
 
   // Bottom Navigation
   bottomNav: {
     position: "absolute",
     bottom: 0,
-    width: "100%",
+    left: 0,
+    right: 0,
     height: 70,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
     backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingBottom: 10,
-  },
-
-  navItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 10,
-  },
-
-  micBtn: {
-    width: 60,
-    height: 60,
-    backgroundColor: "#7C3AED",
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: -30,
-    shadowColor: "#7C3AED",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
+    borderTopColor: "#F3F4F6",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
     shadowRadius: 8,
+    elevation: 10,
+  },
+  navItem: {
+    padding: 8,
+  },
+  micBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#7C3AED",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: -32,
+    shadowColor: "#7C3AED",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
     elevation: 8,
   },
 });
