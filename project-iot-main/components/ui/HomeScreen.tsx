@@ -1,19 +1,19 @@
 // components/ui/HomeScreen.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState, useRef } from "react";
-import { 
-  ActivityIndicator, 
-  Alert, 
-  Image, 
-  Modal, 
-  ScrollView, 
-  Switch, 
-  Text, 
-  TouchableOpacity, 
-  View 
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
+import { MQTT_TOPICS, mqttService, SensorData } from "../../services/mqttService";
 import { styles } from "../styles/home.styles";
-import { mqttService, MQTT_TOPICS, SensorData } from "../../services/mqttService";
 
 // Device state yang persisten (tidak reset saat ganti room)
 interface DeviceStates {
@@ -199,7 +199,7 @@ export default function HomeScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://10.218.19.147:5000/record");
+      const response = await fetch("http://10.218.22.27:5000/record");
       const data = await response.json();
 
       setTranscript(`Kamu bilang: ${data.heard || "Tidak terdengar"}`);

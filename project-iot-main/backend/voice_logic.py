@@ -4,16 +4,22 @@ import speech_recognition as sr
 import tempfile
 import os
 from gtts import gTTS
-import numpy as np
+import base64
 from io import BytesIO
-from pydub import AudioSegment
+try:
+    import paho.mqtt.client as mqtt
+except Exception as _e:
+    mqtt = None
+    print("⚠️ paho-mqtt not available:", _e)
+
+import os as _os
 
 
 # -------------------------------
-# TEXT-TO-SPEECH (gTTS - NO FILES)
+# TEXT-TO-SPEECH (gTTS - NO PLAYBACK ON SERVER)
 # -------------------------------
 def speak(text):
-    """Text-to-speech using gTTS (Indonesian), plays in RAM without file creation"""
+    """Text-to-speech using gTTS (Indonesian), returns MP3 as base64 to send to phone"""
     print("🔊 Voice Response:", text)
     
     try:
@@ -23,21 +29,15 @@ def speak(text):
         tts.write_to_fp(mp3_fp)
         mp3_fp.seek(0)
         
-        # Load MP3 from RAM into pydub
-        audio = AudioSegment.from_file(mp3_fp, format="mp3")
+        # Return MP3 data as base64 (phone will play it)
+        mp3_data = mp3_fp.getvalue()
+        audio_base64 = base64.b64encode(mp3_data).decode('utf-8')
         
-        # Convert to numpy array for playback
-        samples = np.array(audio.get_array_of_samples()).astype(np.float32)
-        
-        # Normalize to -1..+1 range
-        samples /= np.iinfo(audio.array_type).max
-        
-        # Play audio directly (no file created)
-        sd.play(samples, audio.frame_rate)
-        sd.wait()
+        return audio_base64
         
     except Exception as e:
         print("❌ Error in TTS:", e)
+        return None
 
 
 
@@ -45,15 +45,93 @@ def speak(text):
 # COMMAND KEYWORDS
 # -------------------------------
 ACTIONS_ON = ["nyalakan", "hidupkan", "aktifkan", "on", "buka"]
-ACTIONS_OFF = ["matikan", "nonaktifkan", "off", "Tutup"]
+ACTIONS_OFF = ["matikan", "nonaktifkan", "off", "tutup", "Tutup"]
 
 DEVICES = {
     "lampu": ["lampu", "light"],
     "kipas": ["kipas", "fan"],
     "ac": ["ac", "pendingin"],
     "tv": ["tv", "televisi"],
-    "pintu": ["pintu", "door"]
+    "pintu": ["pintu", "door"],
+    "garasi": ["garasi", "garage"],
+    "jemuran": ["jemuran", "tali jemuran", "clothesline"]
 }
+
+# Number words in Indonesian -> integer
+NUMBER_WORDS = {
+    'satu': 1,
+    'dua': 2,
+    'tiga': 3,
+    'empat': 4,
+    'lima': 5,
+}
+
+
+# -------------------------------
+# MQTT PUBLISHER (for IoT control)
+# -------------------------------
+# Configure via environment variables or change defaults below
+MQTT_BROKER_HOST = _os.getenv('MQTT_BROKER_HOST', '10.203.142.56')
+MQTT_BROKER_PORT = int(_os.getenv('MQTT_BROKER_PORT', '1883'))
+
+# Map logical devices to MQTT topics used by your ESP32 / broker
+TOPIC_MAP = {
+    'lampu': 'home/control/lamp',
+    'kipas': 'home/control/fan',
+    'ac': 'home/control/ac',
+    'tv': 'home/control/tv',
+    'pintu': 'home/control/door',
+}
+
+_mqtt_client = None
+_mqtt_connected = False
+
+def _on_connect(client, userdata, flags, rc):
+    global _mqtt_connected
+    if rc == 0:
+        _mqtt_connected = True
+        print(f"✅ MQTT connected to {MQTT_BROKER_HOST}:{MQTT_BROKER_PORT}")
+    else:
+        print("❌ MQTT connection failed with code", rc)
+
+def _init_mqtt():
+    global _mqtt_client
+    if mqtt is None:
+        print("⚠️ Skipping MQTT init because paho-mqtt is not installed")
+        return
+
+    try:
+        _mqtt_client = mqtt.Client()
+        _mqtt_client.on_connect = _on_connect
+        # Use a short timeout connect; if broker isn't available, we'll continue without MQTT
+        _mqtt_client.connect_async(MQTT_BROKER_HOST, MQTT_BROKER_PORT, keepalive=60)
+        _mqtt_client.loop_start()
+    except Exception as e:
+        print("❌ Failed to initialize MQTT client:", e)
+
+
+def mqtt_publish(topic: str, payload: str):
+    """Publish payload to topic if MQTT is initialized. Returns True if published."""
+    global _mqtt_client, _mqtt_connected
+    if _mqtt_client is None:
+        print("⚠️ MQTT client not initialized. Attempting to initialize...")
+        _init_mqtt()
+
+    if _mqtt_client and _mqtt_connected:
+        try:
+            _mqtt_client.publish(topic, payload)
+            print(f"📤 Published MQTT -> {topic}: {payload}")
+            return True
+        except Exception as e:
+            print("❌ MQTT publish error:", e)
+            return False
+    else:
+        print("⚠️ MQTT not connected. Skipping publish for", topic)
+        return False
+
+
+# Initialize MQTT client on module import (best-effort)
+_init_mqtt()
 
 
 
@@ -107,28 +185,50 @@ def record_and_text():
 # PARSE COMMAND
 # -------------------------------
 def parse_command(text):
+    """Parse spoken text and return (action, device, device_number).
+    device_number is an int when the command includes a number (e.g., 'lampu 2')."""
     action = None
     device = None
+    device_number = None
+
+    # normalize
+    t = text.lower()
 
     # Action
     for a in ACTIONS_ON:
-        if a in text:
+        if a in t:
             action = "ON"
             break
 
     for a in ACTIONS_OFF:
-        if a in text:
+        if a in t:
             action = "OFF"
             break
 
     # Device
     for dev_name, keywords in DEVICES.items():
         for k in keywords:
-            if k in text:
+            if k in t:
                 device = dev_name
                 break
+        if device:
+            break
 
-    return action, device
+    # Try to find explicit device number (e.g., 'lampu 2' or 'lampu dua')
+    if device == 'lampu':
+        # digits
+        import re
+        m = re.search(r"\b([1-4])\b", t)
+        if m:
+            device_number = int(m.group(1))
+        else:
+            # number words
+            for word, num in NUMBER_WORDS.items():
+                if word in t:
+                    device_number = num
+                    break
+
+    return action, device, device_number
 
 
 
@@ -145,27 +245,58 @@ def run_voice_ai():
 
     if action and device:
         print(f"✅ COMMAND DETECTED → {action} → {device}")
-        response = f"{device} berhasil {'dinyalakan' if action == 'ON' else 'dimatikan'}."
-        speak(response)
-        return {"heard": text, "action": action, "device": device, "response": response}
+
+        # Parse device number for lamps
+        _, _, device_number = parse_command(text)
+
+        # Build response and MQTT payload according to device
+        mqtt_ok = False
+        mqtt_topic = None
+        mqtt_payload = None
+
+        if device == 'lampu':
+            if device_number is None:
+                # Ask user to specify lamp number
+                response = "Tolong sebutkan nomor lampu (1 sampai 4)."
+                audio_base64 = speak(response)
+                return {"heard": text, "action": action, "device": device, "device_number": None, "response": response, "audio": audio_base64, "mqtt": {"published": False}}
+
+            # payload format: "<lampNumber>:<0|1>" to match frontend
+            mqtt_topic = TOPIC_MAP.get('lampu')
+            mqtt_payload = f"{device_number}:{'1' if action == 'ON' else '0'}"
+            mqtt_ok = mqtt_publish(mqtt_topic, mqtt_payload) if mqtt_topic else False
+            response = f"Lampu {device_number} berhasil {'dinyalakan' if action == 'ON' else 'dimatikan'}."
+
+        else:
+            mqtt_topic = TOPIC_MAP.get(device)
+            # Generic payload: '1' for ON, '0' for OFF (adjust if your device expects different format)
+            mqtt_payload = '1' if action == 'ON' else '0'
+            if mqtt_topic:
+                mqtt_ok = mqtt_publish(mqtt_topic, mqtt_payload)
+            else:
+                print(f"⚠️ No MQTT topic mapping for device: {device}")
+            response = f"{device} berhasil {'dinyalakan' if action == 'ON' else 'dimatikan'}."
+
+        audio_base64 = speak(response)
+        return {"heard": text, "action": action, "device": device, "device_number": device_number, "response": response, "audio": audio_base64, "mqtt": {"topic": mqtt_topic, "payload": mqtt_payload, "published": mqtt_ok}}
 
     elif device and not action:
         print("⚠️ Device ditemukan tapi tidak ada ON/OFF")
         response = "Perintah kurang lengkap. Tolong sebutkan nyalakan atau matikan."
-        speak(response)
-        return {"heard": text, "action": None, "device": device, "response": response}
+        audio_base64 = speak(response)
+        return {"heard": text, "action": None, "device": device, "response": response, "audio": audio_base64}
 
     elif action and not device:
         print("⚠️ Aksi ditemukan tapi perangkat tidak ditemukan")
         response = "Perangkat tidak ditemukan. Tolong sebutkan nama perangkat."
-        speak(response)
-        return {"heard": text, "action": action, "device": None, "response": response}
+        audio_base64 = speak(response)
+        return {"heard": text, "action": action, "device": None, "response": response, "audio": audio_base64}
 
     else:
         print("❌ Tidak bisa memahami perintah.")
-        response = "rio sangat kontol sekali dia adalah manuusia anjing sanagt bodoh tolol dan lain lain"
-        speak(response)
-        return {"heard": text, "action": None, "device": None, "response": response}
+        response = "Maaf, saya tidak mengerti perintahnya."
+        audio_base64 = speak(response)
+        return {"heard": text, "action": None, "device": None, "response": response, "audio": audio_base64}
 
 
 # Only run if called directly (not from server)
