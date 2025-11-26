@@ -1,5 +1,6 @@
 // components/ui/HomeScreen.tsx
 import { Ionicons } from "@expo/vector-icons";
+import { Audio } from "expo-av";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -205,13 +206,45 @@ export default function HomeScreen() {
       setTranscript(`Kamu bilang: ${data.heard || "Tidak terdengar"}`);
       setLoading(false);
 
+      // Play the voice response if audio is provided
+      if (data.audio) {
+        try {
+          await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+          
+          // Convert base64 to a Data URL
+          const audioDataUrl = `data:audio/mp3;base64,${data.audio}`;
+          
+          const { sound } = await Audio.Sound.createAsync(
+            { uri: audioDataUrl },
+            { shouldPlay: true }
+          );
+          
+          console.log("🔊 Playing voice response...");
+          await sound.playAsync();
+          
+          // Wait for audio to finish before closing modal
+          await new Promise(resolve => {
+            const interval = setInterval(async () => {
+              const status = await sound.getStatusAsync();
+              if (!status.isLoaded || status.didJustFinish) {
+                clearInterval(interval);
+                await sound.unloadAsync();
+                resolve(null);
+              }
+            }, 100);
+          });
+        } catch (audioErr) {
+          console.log("⚠️ Error playing audio:", audioErr);
+        }
+      }
+
       setTimeout(() => {
         Alert.alert(
           "Voice Command",
-          `Action: ${data.action || "-"}\nDevice: ${data.device || "-"}`
+          `Action: ${data.action || "-"}\nDevice: ${data.device || "-"}\nResponse: ${data.response || ""}`
         );
         setModalVisible(false);
-      }, 1000);
+      }, 500);
 
     } catch (err) {
       console.log("Error:", err);
