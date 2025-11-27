@@ -8,14 +8,14 @@ import {
   Switch,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/SecurityCamera.styles';
 
-// Configuration
-const SERVER_URL = 'http://10.218.21.141:5000'; // Ganti dengan IP server Anda
+const SERVER_URL = 'http://10.218.21.141:5000';
 
 interface ThreatInfo {
   level: string;
@@ -23,15 +23,27 @@ interface ThreatInfo {
   reasons: string[];
   authorized_count: number;
   unauthorized_count: number;
+  has_intruder: boolean;
+  has_stealing: boolean;
+}
+
+interface FaceInfo {
+  person_id: string;
+  name: string;
+  role: string;
+  confidence: number;
+  status: string;
 }
 
 interface DetectionResult {
   timestamp: string;
   threat: ThreatInfo;
-  faces: any[];
+  faces: FaceInfo[];
   people_count: number;
   intruder_count: number;
   stealing_count: number;
+  fps: number;
+  process_time: number;
 }
 
 interface SystemStatus {
@@ -40,6 +52,7 @@ interface SystemStatus {
   fps: number;
   total_events: number;
   current_detection: DetectionResult;
+  frames_received: number;
 }
 
 interface Statistics {
@@ -51,8 +64,7 @@ interface Statistics {
 }
 
 const SecurityCameraScreen: React.FC = () => {
-  // State
-  const [streamUrl, setStreamUrl] = useState<string>('');
+  const [streamUrl, setStreamUrl] = useState<string>('10.218.22.173');
   const [detection, setDetection] = useState<DetectionResult | null>(null);
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
@@ -61,10 +73,8 @@ const SecurityCameraScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Refs
   const socketRef = useRef<Socket | null>(null);
 
-  // Initialize
   useEffect(() => {
     initializeConnection();
     fetchStatus();
@@ -77,7 +87,6 @@ const SecurityCameraScreen: React.FC = () => {
     };
   }, []);
 
-  // WebSocket Connection
   const initializeConnection = () => {
     const socket = io(SERVER_URL, {
       transports: ['websocket'],
@@ -86,30 +95,26 @@ const SecurityCameraScreen: React.FC = () => {
     });
 
     socket.on('connect', () => {
-      console.log('Connected to server');
+      console.log('✓ Connected to server');
       setIsConnected(true);
       setStreamUrl(`${SERVER_URL}/api/video_feed?t=${Date.now()}`);
       socket.emit('request_status');
     });
 
     socket.on('disconnect', () => {
-      console.log('Disconnected from server');
+      console.log('✗ Disconnected from server');
       setIsConnected(false);
     });
 
     socket.on('detection_update', (data: DetectionResult) => {
+      console.log('📊 Detection update:', data);
       setDetection(data);
       setIsLoading(false);
-    });
-
-    socket.on('connected', () => {
-      setIsConnected(true);
     });
 
     socketRef.current = socket;
   };
 
-  // Fetch Status
   const fetchStatus = async () => {
     try {
       const response = await fetch(`${SERVER_URL}/api/status`);
@@ -126,7 +131,6 @@ const SecurityCameraScreen: React.FC = () => {
     }
   };
 
-  // Fetch Statistics
   const fetchStatistics = async () => {
     try {
       const response = await fetch(`${SERVER_URL}/api/statistics`);
@@ -137,7 +141,6 @@ const SecurityCameraScreen: React.FC = () => {
     }
   };
 
-  // Toggle Armed Status
   const toggleArmed = async (value: boolean) => {
     try {
       const response = await fetch(`${SERVER_URL}/api/arm`, {
@@ -150,7 +153,7 @@ const SecurityCameraScreen: React.FC = () => {
         setIsArmed(value);
         Alert.alert(
           'Success',
-          value ? 'System is now armed' : 'System is now disarmed'
+          value ? 'System Armed 🛡️' : 'System Disarmed'
         );
       }
     } catch (error) {
@@ -158,14 +161,12 @@ const SecurityCameraScreen: React.FC = () => {
     }
   };
 
-  // Refresh Handler
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([fetchStatus(), fetchStatistics()]);
     setRefreshing(false);
   };
 
-  // Get Threat Color
   const getThreatColor = (level: string): string => {
     const colors: { [key: string]: string } = {
       LOW: '#10b981',
@@ -176,7 +177,6 @@ const SecurityCameraScreen: React.FC = () => {
     return colors[level] || '#6b7280';
   };
 
-  // Get Threat Icon
   const getThreatIcon = (level: string): keyof typeof Ionicons.glyphMap => {
     const icons: { [key: string]: keyof typeof Ionicons.glyphMap } = {
       LOW: 'shield-checkmark',
@@ -187,149 +187,217 @@ const SecurityCameraScreen: React.FC = () => {
     return icons[level] || 'help-circle';
   };
 
+  const formatTimestamp = (timestamp: string): string => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    } catch {
+      return 'N/A';
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient colors={['#1e293b', '#0f172a']} style={styles.header}>
-        <View style={styles.headerContent}>
+      {/* Compact Header */}
+      <LinearGradient colors={['#0f172a', '#1e293b']} style={styles.compactHeader}>
+        <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Ionicons name="videocam" size={28} color="#fff" />
-            <View style={styles.headerText}>
-              <Text style={styles.headerTitle}>Security Camera</Text>
-              <View style={styles.statusBadge}>
-                <View
-                  style={[
-                    styles.statusDot,
-                    { backgroundColor: isConnected ? '#10b981' : '#ef4444' },
-                  ]}
-                />
-                <Text style={styles.statusText}>
-                  {isConnected ? 'Connected' : 'Disconnected'}
-                </Text>
-              </View>
-            </View>
+            <Ionicons name="shield-checkmark" size={24} color="#10b981" />
+            <Text style={styles.headerTitle}>Security Monitor</Text>
           </View>
-
           <View style={styles.headerRight}>
-            <Text style={styles.armedLabel}>Armed</Text>
+            <View style={[styles.statusDot, { 
+              backgroundColor: isConnected ? '#10b981' : '#ef4444' 
+            }]} />
             <Switch
               value={isArmed}
               onValueChange={toggleArmed}
-              trackColor={{ false: '#64748b', true: '#10b981' }}
-              thumbColor={isArmed ? '#fff' : '#f1f5f9'}
+              trackColor={{ false: '#475569', true: '#10b981' }}
+              thumbColor="#fff"
+              style={styles.switch}
             />
           </View>
         </View>
       </LinearGradient>
 
       <ScrollView
-        style={styles.content}
+        style={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        showsVerticalScrollIndicator={false}
       >
-        {/* Video Stream */}
-        <View style={styles.streamContainer}>
+        {/* Live Stream Card */}
+        <View style={styles.streamCard}>
           {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#3b82f6" />
-              <Text style={styles.loadingText}>Connecting to camera...</Text>
+            <View style={styles.loadingView}>
+              <ActivityIndicator size="large" color="#10b981" />
+              <Text style={styles.loadingText}>Connecting...</Text>
             </View>
           ) : (
             <>
               <Image
                 source={{ uri: streamUrl }}
                 style={styles.streamImage}
-                resizeMode="contain"
+                resizeMode="cover"
               />
               {!isConnected && (
-                <View style={styles.disconnectedOverlay}>
-                  <Ionicons name="videocam-off" size={48} color="#ef4444" />
-                  <Text style={styles.disconnectedText}>Camera Offline</Text>
+                <View style={styles.offlineOverlay}>
+                  <Ionicons name="videocam-off" size={40} color="#ef4444" />
+                  <Text style={styles.offlineText}>Camera Offline</Text>
+                </View>
+              )}
+              {detection && (
+                <View style={styles.liveIndicator}>
+                  <View style={styles.liveRedDot} />
+                  <Text style={styles.liveText}>LIVE</Text>
+                  <Text style={styles.fpsText}>{detection.fps} FPS</Text>
                 </View>
               )}
             </>
           )}
         </View>
 
-        {/* Threat Level Card */}
+        {/* Threat Status Card */}
         {detection && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons
-                name={getThreatIcon(detection.threat.level)}
-                size={24}
-                color={getThreatColor(detection.threat.level)}
-              />
-              <Text style={styles.cardTitle}>Threat Level</Text>
-            </View>
-
-            <View
-              style={[
-                styles.threatBadge,
-                { backgroundColor: getThreatColor(detection.threat.level) + '20' },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.threatLevel,
-                  { color: getThreatColor(detection.threat.level) },
-                ]}
-              >
-                {detection.threat.level}
-              </Text>
-              <Text style={styles.threatScore}>
-                Score: {detection.threat.score}
-              </Text>
+          <View style={styles.modernCard}>
+            <View style={styles.threatHeader}>
+              <View style={styles.threatHeaderLeft}>
+                <Ionicons
+                  name={getThreatIcon(detection.threat.level)}
+                  size={28}
+                  color={getThreatColor(detection.threat.level)}
+                />
+                <View style={styles.threatHeaderText}>
+                  <Text style={styles.cardLabel}>Security Status</Text>
+                  <Text style={[
+                    styles.threatLevelText,
+                    { color: getThreatColor(detection.threat.level) }
+                  ]}>
+                    {detection.threat.level}
+                  </Text>
+                </View>
+              </View>
+              <View style={[
+                styles.scoreBadge,
+                { backgroundColor: getThreatColor(detection.threat.level) + '20' }
+              ]}>
+                <Text style={[
+                  styles.scoreText,
+                  { color: getThreatColor(detection.threat.level) }
+                ]}>
+                  {detection.threat.score}
+                </Text>
+              </View>
             </View>
 
             {detection.threat.reasons.length > 0 && (
-              <View style={styles.reasonsList}>
+              <View style={styles.reasonsContainer}>
                 {detection.threat.reasons.map((reason, index) => (
-                  <Text key={index} style={styles.reasonText}>
-                    • {reason}
-                  </Text>
+                  <View key={index} style={styles.reasonItem}>
+                    <Ionicons 
+                      name={reason.includes('✓') ? 'checkmark-circle' : 'information-circle'} 
+                      size={16} 
+                      color={reason.includes('✓') ? '#10b981' : '#64748b'} 
+                    />
+                    <Text style={styles.reasonText}>{reason}</Text>
+                  </View>
                 ))}
               </View>
             )}
           </View>
         )}
 
-        {/* Detection Stats Card */}
+        {/* Quick Stats Grid */}
         {detection && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="people" size={24} color="#3b82f6" />
-              <Text style={styles.cardTitle}>Current Detections</Text>
+          <View style={styles.statsGrid}>
+            <View style={[styles.quickStatCard, { borderLeftColor: '#10b981' }]}>
+              <Ionicons name="people" size={24} color="#10b981" />
+              <Text style={styles.quickStatValue}>{detection.people_count}</Text>
+              <Text style={styles.quickStatLabel}>People</Text>
             </View>
 
-            <View style={styles.statsGrid}>
-              <View style={styles.statItem}>
-                <Ionicons name="person" size={32} color="#10b981" />
-                <Text style={styles.statValue}>{detection.people_count}</Text>
-                <Text style={styles.statLabel}>People</Text>
+            <View style={[styles.quickStatCard, { borderLeftColor: '#3b82f6' }]}>
+              <Ionicons name="shield-checkmark" size={24} color="#3b82f6" />
+              <Text style={styles.quickStatValue}>{detection.threat.authorized_count}</Text>
+              <Text style={styles.quickStatLabel}>Authorized</Text>
+            </View>
+
+            <View style={[styles.quickStatCard, { borderLeftColor: '#f59e0b' }]}>
+              <Ionicons name="person" size={24} color="#f59e0b" />
+              <Text style={styles.quickStatValue}>{detection.threat.unauthorized_count}</Text>
+              <Text style={styles.quickStatLabel}>Unknown</Text>
+            </View>
+
+            <View style={[styles.quickStatCard, { borderLeftColor: '#ef4444' }]}>
+              <Ionicons name="warning" size={24} color="#ef4444" />
+              <Text style={styles.quickStatValue}>{detection.intruder_count}</Text>
+              <Text style={styles.quickStatLabel}>Intruders</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Detection Details Card */}
+        {detection && (
+          <View style={styles.modernCard}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="analytics" size={20} color="#64748b" />
+              <Text style={styles.cardTitle}>Detection Details</Text>
+            </View>
+            
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Stealing Activity</Text>
+                <View style={styles.detailValue}>
+                  <Ionicons 
+                    name={detection.threat.has_stealing ? 'close-circle' : 'checkmark-circle'} 
+                    size={20} 
+                    color={detection.threat.has_stealing ? '#ef4444' : '#10b981'} 
+                  />
+                  <Text style={[
+                    styles.detailText,
+                    { color: detection.threat.has_stealing ? '#ef4444' : '#10b981' }
+                  ]}>
+                    {detection.threat.has_stealing ? 'Detected' : 'None'}
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.statItem}>
-                <Ionicons name="shield-checkmark" size={32} color="#3b82f6" />
-                <Text style={styles.statValue}>
-                  {detection.threat.authorized_count}
-                </Text>
-                <Text style={styles.statLabel}>Authorized</Text>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Masked Person</Text>
+                <View style={styles.detailValue}>
+                  <Ionicons 
+                    name={detection.threat.has_intruder ? 'close-circle' : 'checkmark-circle'} 
+                    size={20} 
+                    color={detection.threat.has_intruder ? '#ef4444' : '#10b981'} 
+                  />
+                  <Text style={[
+                    styles.detailText,
+                    { color: detection.threat.has_intruder ? '#ef4444' : '#10b981' }
+                  ]}>
+                    {detection.threat.has_intruder ? 'Detected' : 'None'}
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.statItem}>
-                <Ionicons name="warning" size={32} color="#f59e0b" />
-                <Text style={styles.statValue}>
-                  {detection.threat.unauthorized_count}
-                </Text>
-                <Text style={styles.statLabel}>Unknown</Text>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Process Time</Text>
+                <View style={styles.detailValue}>
+                  <Ionicons name="time" size={20} color="#64748b" />
+                  <Text style={styles.detailText}>{detection.process_time}s</Text>
+                </View>
               </View>
 
-              <View style={styles.statItem}>
-                <Ionicons name="alert-circle" size={32} color="#ef4444" />
-                <Text style={styles.statValue}>{detection.intruder_count}</Text>
-                <Text style={styles.statLabel}>Intruders</Text>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Last Update</Text>
+                <View style={styles.detailValue}>
+                  <Ionicons name="time-outline" size={20} color="#64748b" />
+                  <Text style={styles.detailText}>{formatTimestamp(detection.timestamp)}</Text>
+                </View>
               </View>
             </View>
           </View>
@@ -337,30 +405,36 @@ const SecurityCameraScreen: React.FC = () => {
 
         {/* Recognized Faces Card */}
         {detection && detection.faces.length > 0 && (
-          <View style={styles.card}>
+          <View style={styles.modernCard}>
             <View style={styles.cardHeader}>
-              <Ionicons name="body" size={24} color="#8b5cf6" />
-              <Text style={styles.cardTitle}>Recognized Faces</Text>
+              <Ionicons name="person-circle" size={20} color="#8b5cf6" />
+              <Text style={styles.cardTitle}>Recognized People</Text>
+              <View style={styles.countBadge}>
+                <Text style={styles.countBadgeText}>{detection.faces.length}</Text>
+              </View>
             </View>
 
             {detection.faces.map((face, index) => (
-              <View key={index} style={styles.faceItem}>
-                <View
-                  style={[
-                    styles.faceStatusDot,
-                    {
-                      backgroundColor:
-                        face.status === 'AUTHORIZED' ? '#10b981' : '#ef4444',
-                    },
-                  ]}
-                />
-                <View style={styles.faceInfo}>
-                  <Text style={styles.faceName}>{face.name}</Text>
-                  <Text style={styles.faceRole}>{face.role}</Text>
+              <View key={index} style={styles.faceCard}>
+                <View style={[
+                  styles.faceStatusIndicator,
+                  { backgroundColor: face.status === 'AUTHORIZED' ? '#10b981' : '#ef4444' }
+                ]} />
+                <View style={styles.faceContent}>
+                  <View style={styles.faceInfo}>
+                    <Text style={styles.faceName}>{face.name}</Text>
+                    <Text style={styles.faceRole}>{face.role}</Text>
+                  </View>
+                  <View style={styles.faceConfidenceContainer}>
+                    <Text style={[
+                      styles.faceConfidence,
+                      { color: face.status === 'AUTHORIZED' ? '#10b981' : '#ef4444' }
+                    ]}>
+                      {(face.confidence * 100).toFixed(0)}%
+                    </Text>
+                    <Text style={styles.faceStatus}>{face.status}</Text>
+                  </View>
                 </View>
-                <Text style={styles.faceConfidence}>
-                  {(face.confidence * 100).toFixed(0)}%
-                </Text>
               </View>
             ))}
           </View>
@@ -368,20 +442,17 @@ const SecurityCameraScreen: React.FC = () => {
 
         {/* Statistics Card */}
         {statistics && (
-          <View style={styles.card}>
+          <View style={styles.modernCard}>
             <View style={styles.cardHeader}>
-              <Ionicons name="bar-chart" size={24} color="#06b6d4" />
-              <Text style={styles.cardTitle}>Statistics</Text>
+              <Ionicons name="bar-chart" size={20} color="#06b6d4" />
+              <Text style={styles.cardTitle}>Event Statistics</Text>
             </View>
 
             <View style={styles.statsRow}>
               <View style={styles.statBox}>
-                <Text style={styles.statBoxValue}>
-                  {statistics.total_events}
-                </Text>
+                <Text style={styles.statBoxValue}>{statistics.total_events}</Text>
                 <Text style={styles.statBoxLabel}>Total Events</Text>
               </View>
-
               <View style={styles.statBox}>
                 <Text style={styles.statBoxValue}>{statistics.recent_24h}</Text>
                 <Text style={styles.statBoxLabel}>Last 24h</Text>
@@ -395,7 +466,6 @@ const SecurityCameraScreen: React.FC = () => {
                 </Text>
                 <Text style={styles.statBoxLabel}>Authorized</Text>
               </View>
-
               <View style={styles.statBox}>
                 <Text style={[styles.statBoxValue, { color: '#ef4444' }]}>
                   {statistics.unauthorized_detections}
@@ -406,32 +476,17 @@ const SecurityCameraScreen: React.FC = () => {
           </View>
         )}
 
-        {/* System Info Card */}
+        {/* System Info Footer */}
         {status && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="information-circle" size={24} color="#64748b" />
-              <Text style={styles.cardTitle}>System Information</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>FPS:</Text>
-              <Text style={styles.infoValue}>{status.fps.toFixed(1)}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Last Update:</Text>
-              <Text style={styles.infoValue}>
-                {new Date(status.last_update).toLocaleTimeString()}
-              </Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Total Events:</Text>
-              <Text style={styles.infoValue}>{status.total_events}</Text>
-            </View>
+          <View style={styles.footerCard}>
+            <Ionicons name="server" size={16} color="#64748b" />
+            <Text style={styles.footerText}>
+              System Active • {status.total_events} Total Events • {status.frames_received} Frames
+            </Text>
           </View>
         )}
+
+        <View style={{ height: 20 }} />
       </ScrollView>
     </View>
   );

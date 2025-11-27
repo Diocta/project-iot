@@ -49,11 +49,7 @@
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
     "recharts": "^3.5.0",
-<<<<<<< HEAD
     "socket.io-client": "^4.8.1"
-=======
-    "stream-browserify": "^3.0.0"
->>>>>>> b7df20fb3069cc204c16d698ccc66d342d614147
   },
   "devDependencies": {
     "@expo/dev-server": "^0.5.5",

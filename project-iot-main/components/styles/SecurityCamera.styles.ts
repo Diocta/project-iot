@@ -1,16 +1,22 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0f172a',
   },
-  header: {
+
+  // ============================================================================
+  // COMPACT HEADER
+  // ============================================================================
+  compactHeader: {
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 15,
     paddingHorizontal: 20,
   },
-  headerContent: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -19,52 +25,51 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  headerText: {
-    marginLeft: 12,
-  },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#fff',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#cbd5e1',
+    marginLeft: 10,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
-  armedLabel: {
-    fontSize: 14,
-    color: '#cbd5e1',
-    marginRight: 8,
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  content: {
+  switch: {
+    transform: [{ scale: 0.9 }],
+  },
+
+  // ============================================================================
+  // SCROLL CONTENT
+  // ============================================================================
+  scrollContent: {
     flex: 1,
   },
-  streamContainer: {
-    width: '100%',
-    height: 250,
-    backgroundColor: '#000',
+
+  // ============================================================================
+  // STREAM CARD
+  // ============================================================================
+  streamCard: {
+    width: width - 32,
+    height: 220,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#1e293b',
     position: 'relative',
   },
   streamImage: {
     width: '100%',
     height: '100%',
   },
-  loadingContainer: {
+  loadingView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -74,163 +79,324 @@ export const styles = StyleSheet.create({
     marginTop: 12,
     color: '#94a3b8',
     fontSize: 14,
+    fontWeight: '500',
   },
-  disconnectedOverlay: {
+  offlineOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  disconnectedText: {
+  offlineText: {
     marginTop: 12,
     color: '#ef4444',
     fontSize: 16,
     fontWeight: '600',
   },
-  card: {
-    backgroundColor: '#fff',
-    margin: 16,
+  liveIndicator: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  liveRedDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+  },
+  liveText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  fpsText: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+
+  // ============================================================================
+  // MODERN CARD
+  // ============================================================================
+  modernCard: {
+    backgroundColor: '#1e293b',
+    marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 0,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+
+  // ============================================================================
+  // THREAT HEADER
+  // ============================================================================
+  threatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  threatHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  threatHeaderText: {
+    gap: 4,
+  },
+  cardLabel: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  threatLevelText: {
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  scoreBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreText: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+
+  // ============================================================================
+  // REASONS
+  // ============================================================================
+  reasonsContainer: {
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+  },
+  reasonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reasonText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#cbd5e1',
+    fontWeight: '500',
+  },
+
+  // ============================================================================
+  // QUICK STATS GRID
+  // ============================================================================
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: 16,
+    marginTop: 16,
+    gap: 12,
+  },
+  quickStatCard: {
+    flex: 1,
+    minWidth: (width - 56) / 2,
+    backgroundColor: '#1e293b',
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderLeftWidth: 4,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+    gap: 8,
   },
+  quickStatValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  quickStatLabel: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+
+  // ============================================================================
+  // CARD HEADER
+  // ============================================================================
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    gap: 8,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginLeft: 8,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#f1f5f9',
   },
-  threatBadge: {
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 12,
+  countBadge: {
+    backgroundColor: '#334155',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  threatLevel: {
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  threatScore: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 4,
-  },
-  reasonsList: {
-    marginTop: 8,
-  },
-  reasonText: {
-    fontSize: 14,
-    color: '#475569',
-    marginBottom: 4,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    width: '48%',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f8fafc',
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginTop: 8,
-  },
-  statLabel: {
+  countBadgeText: {
     fontSize: 12,
-    color: '#64748b',
-    marginTop: 4,
+    fontWeight: '700',
+    color: '#cbd5e1',
   },
-  faceItem: {
+
+  // ============================================================================
+  // DETAILS GRID
+  // ============================================================================
+  detailsGrid: {
+    gap: 12,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+    padding: 12,
+    borderRadius: 10,
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  detailValue: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#f8fafc',
-    borderRadius: 8,
-    marginBottom: 8,
+    gap: 6,
   },
-  faceStatusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
+  detailText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  // ============================================================================
+  // FACE CARD
+  // ============================================================================
+  faceCard: {
+    flexDirection: 'row',
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+  },
+  faceStatusIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  faceContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   faceInfo: {
     flex: 1,
+    gap: 4,
   },
   faceName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
+    fontWeight: '700',
+    color: '#f1f5f9',
   },
   faceRole: {
     fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
+    color: '#94a3b8',
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  faceConfidenceContainer: {
+    alignItems: 'flex-end',
+    gap: 2,
   },
   faceConfidence: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3b82f6',
+    fontSize: 18,
+    fontWeight: '800',
   },
+  faceStatus: {
+    fontSize: 10,
+    color: '#64748b',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // ============================================================================
+  // STATS ROW
+  // ============================================================================
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 12,
   },
   statBox: {
     flex: 1,
-    alignItems: 'center',
+    backgroundColor: '#0f172a',
     padding: 16,
-    backgroundColor: '#f8fafc',
-    borderRadius: 8,
-    marginHorizontal: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: 6,
   },
   statBoxValue: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
+    fontWeight: '800',
+    color: '#f1f5f9',
   },
   statBoxLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 4,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  infoValue: {
-    fontSize: 14,
+    fontSize: 11,
+    color: '#94a3b8',
     fontWeight: '600',
-    color: '#1e293b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // ============================================================================
+  // FOOTER CARD
+  // ============================================================================
+  footerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1e293b',
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  footerText: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
   },
 });
