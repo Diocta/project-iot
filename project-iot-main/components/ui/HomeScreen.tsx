@@ -244,23 +244,83 @@ export default function HomeScreen() {
 
   const handleMicPress = async () => {
     setModalVisible(true);
-    setTranscript("Mendengar...");
+    setTranscript("Meminta izin mikrofon...");
     setLoading(true);
 
     try {
-      const response = await fetch("http://10.203.142.56:5000/record");
+      // 1. Request microphone permission
+      const permission = await Audio.requestPermissionsAsync();
+      if (!permission.granted) {
+        setTranscript("Izin mikrofon ditolak");
+        setLoading(false);
+        setTimeout(() => setModalVisible(false), 2000);
+        return;
+      }
+
+      // 2. Configure audio mode for recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      // 3. Start recording from phone's microphone
+      setTranscript("🎤 Mendengar... (4 detik)");
+      
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      // Record for 4 seconds (sama seperti backend duration)
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+
+      // 4. Stop recording
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+
+      if (!uri) {
+        throw new Error("Recording failed - no URI");
+      }
+
+      setTranscript("📤 Mengirim ke server...");
+
+      // 5. Upload audio file to server (POST /record)
+      const formData = new FormData();
+      formData.append("audio", {
+        uri: uri,
+        type: "audio/wav",
+        name: "recording.wav",
+      } as any);
+
+      const response = await fetch("http://10.203.142.56:5000/record", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       const data = await response.json();
 
-      setTranscript(`Kamu bilang: ${data.heard || "Tidak terdengar"}`);
+      if (data.error) {
+        setTranscript(`Error: ${data.error}`);
+        setLoading(false);
+        setTimeout(() => setModalVisible(false), 2000);
+        return;
+      }
+
+      setTranscript("Kamu bilang: " + (data.heard || "Tidak terdengar"));
       setLoading(false);
 
-      // Play the voice response if audio is provided
+      // 6. Play the voice response if audio is provided
       if (data.audio) {
         try {
-          await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+          await Audio.setAudioModeAsync({ 
+            playsInSilentModeIOS: true,
+            allowsRecordingIOS: false, // Disable recording saat playback
+          });
 
           // Convert base64 to a Data URL
-          const audioDataUrl = `data:audio/mp3;base64,${data.audio}`;
+          const audioDataUrl = "data:audio/mp3;base64," + data.audio;
 
           const { sound } = await Audio.Sound.createAsync(
             { uri: audioDataUrl },

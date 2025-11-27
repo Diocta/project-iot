@@ -6,6 +6,7 @@ import os
 from gtts import gTTS
 import base64
 from io import BytesIO
+from pydub import AudioSegment  # NEW: untuk konversi format audio
 try:
     import paho.mqtt.client as mqtt
 except Exception as _e:
@@ -186,11 +187,9 @@ def text_from_wav(path: str) -> str:
         return text.lower()
     except sr.UnknownValueError:
         print("❌ Tidak bisa mengenali suara dari file.")
-        speak("Maaf, saya tidak mendengar dengan jelas.")
         return ""
     except sr.RequestError:
         print("❌ Error Google Speech API")
-        speak("Terjadi kesalahan saat menghubungi layanan.")
         return ""
     except Exception as e:
         print("❌ Error transcribing file:", e)
@@ -318,18 +317,50 @@ def _handle_text_and_build_response(text: str):
 
 
 def run_voice_ai_from_wav_bytes(wav_bytes: bytes):
-    """Accept raw WAV bytes (or file bytes), write temp file, transcribe and handle the command."""
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmpfile:
-        tmpfile.write(wav_bytes)
-        tmpfile.flush()
-        temp_path = tmpfile.name
+    """Accept raw audio bytes (WAV/M4A/etc from mobile), convert to PCM WAV, transcribe and handle the command."""
+    
+    # Create temporary file for input audio
+    with tempfile.NamedTemporaryFile(suffix=".audio", delete=False) as input_file:
+        input_file.write(wav_bytes)
+        input_file.flush()
+        input_path = input_file.name
+    
+    # Create temporary file for converted WAV
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as output_file:
+        output_path = output_file.name
 
     try:
-        text = text_from_wav(temp_path)
+        print(f"🔄 Converting audio format to PCM WAV...")
+        
+        # Use pydub to convert any audio format to PCM WAV (16kHz mono)
+        audio = AudioSegment.from_file(input_path)
+        audio = audio.set_frame_rate(16000).set_channels(1)  # 16kHz mono
+        audio.export(output_path, format="wav")
+        
+        print(f"✅ Conversion successful! Processing transcription...")
+        
+        # Now transcribe the converted WAV
+        text = text_from_wav(output_path)
         return _handle_text_and_build_response(text)
+        
+    except Exception as e:
+        print(f"❌ Error processing audio: {e}")
+        response = "Maaf, tidak bisa memproses audio. Silakan coba lagi."
+        audio_base64 = speak(response)
+        return {
+            "heard": "",
+            "action": None,
+            "device": None,
+            "device_number": None,
+            "response": response,
+            "audio": audio_base64,
+            "error": str(e)
+        }
     finally:
+        # Cleanup temporary files
         try:
-            os.unlink(temp_path)
+            os.unlink(input_path)
+            os.unlink(output_path)
         except:
             pass
 
