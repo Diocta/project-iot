@@ -64,7 +64,7 @@ interface Statistics {
 }
 
 const SecurityCameraScreen: React.FC = () => {
-  const [streamUrl, setStreamUrl] = useState<string>('10.218.22.173');
+  const [streamUrl, setStreamUrl] = useState<string>('');
   const [detection, setDetection] = useState<DetectionResult | null>(null);
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [statistics, setStatistics] = useState<Statistics | null>(null);

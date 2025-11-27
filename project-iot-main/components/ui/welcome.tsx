@@ -1,15 +1,15 @@
-import React, { useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  StatusBar,
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useRef } from "react";
+import {
   Animated,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { styles } from '../styles/welcome.styles';
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { styles } from "../styles/welcome.styles";
 
 interface WelcomeScreenProps {
   onContinue: () => void;
@@ -39,7 +39,7 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#7C3AED" />
       <LinearGradient
-        colors={['#7C3AED', '#8B5CF6', '#A78BFA']}
+        colors={["#7C3AED", "#8B5CF6", "#A78BFA"]}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -52,19 +52,19 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
         </View>
 
         {/* Content */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.content,
             {
               opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
+              transform: [{ translateY: slideAnim }],
+            },
           ]}
         >
           {/* Logo Icon */}
           <View style={styles.iconContainer}>
             <LinearGradient
-              colors={['#FFFFFF', '#F5F3FF']}
+              colors={["#FFFFFF", "#F5F3FF"]}
               style={styles.iconGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -75,7 +75,8 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
 
           <Text style={styles.title}>Sweet Home</Text>
           <Text style={styles.subtitle}>
-            Control your home with ease. Experience smart living at your fingertips with intelligent automation
+            Control your home with ease. Experience smart living at your
+            fingertips with intelligent automation
           </Text>
 
           {/* Feature Pills */}
@@ -89,7 +90,11 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
               <Text style={styles.featureText}>Climate</Text>
             </View>
             <View style={styles.featurePill}>
-              <Ionicons name="shield-checkmark-outline" size={18} color="#66BB6A" />
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={18}
+                color="#66BB6A"
+              />
               <Text style={styles.featureText}>Security</Text>
             </View>
             <View style={styles.featurePill}>
@@ -117,13 +122,13 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
           </View>
 
           {/* Continue Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.continueButton}
             onPress={onContinue}
             activeOpacity={0.9}
           >
             <LinearGradient
-              colors={['#FFFFFF', '#FAFAFA']}
+              colors={["#FFFFFF", "#FAFAFA"]}
               style={styles.buttonGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -133,10 +138,7 @@ export default function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.skipButton}
-            onPress={onContinue}
-          >
+          <TouchableOpacity style={styles.skipButton} onPress={onContinue}>
             <Text style={styles.skipText}>Skip for now</Text>
           </TouchableOpacity>
 

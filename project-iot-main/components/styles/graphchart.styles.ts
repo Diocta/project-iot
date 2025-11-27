@@ -5,6 +5,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F5F3FF",
     paddingTop: 50,
+    paddingBottom: 20,
   },
   header: {
     flexDirection: "row",
@@ -93,7 +94,7 @@ export const styles = StyleSheet.create({
     color: "#9CA3AF",
   },
   chartSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 25,
   },
   chartHeader: {
@@ -103,7 +104,7 @@ export const styles = StyleSheet.create({
     marginBottom: 20,
   },
   chartTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     color: "#1F2937",
   },
@@ -131,8 +132,8 @@ export const styles = StyleSheet.create({
   },
   chartContainer: {
     backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 15,
+    borderRadius: 16,
+    padding: 10,
     marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -143,13 +144,14 @@ export const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 25,
   },
   statBox: {
     backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 15,
+    borderRadius: 12,
+    padding: 12,
     flex: 1,
-    marginHorizontal: 5,
+    marginHorizontal: 6,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -167,18 +169,19 @@ export const styles = StyleSheet.create({
     fontWeight: "800",
   },
   detailsSection: {
-    paddingHorizontal: 25,
+    paddingHorizontal: 16,
+    marginBottom: 20,
   },
   detailsTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     color: "#1F2937",
-    marginBottom: 15,
+    marginBottom: 12,
   },
   detailCard: {
     backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 16,
+    padding: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
