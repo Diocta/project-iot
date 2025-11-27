@@ -1,21 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import BottomNav from "@/components/BottomNav";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  Alert,
-  Switch,
   ActivityIndicator,
+  Alert,
+  Image,
   RefreshControl,
-} from 'react-native';
-import { io, Socket } from 'socket.io-client';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { styles } from '../styles/SecurityCamera.styles';
+  ScrollView,
+  Switch,
+  Text,
+  View,
+} from "react-native";
+import { io, Socket } from "socket.io-client";
+import { styles } from "../styles/SecurityCamera.styles";
 
 // Configuration
-const SERVER_URL = 'http://10.218.21.141:5000'; // Ganti dengan IP server Anda
+const SERVER_URL = "http://10.218.21.141:5000"; // Ganti dengan IP server Anda
 
 interface ThreatInfo {
   level: string;
@@ -52,7 +53,7 @@ interface Statistics {
 
 const SecurityCameraScreen: React.FC = () => {
   // State
-  const [streamUrl, setStreamUrl] = useState<string>('');
+  const [streamUrl, setStreamUrl] = useState<string>("");
   const [detection, setDetection] = useState<DetectionResult | null>(null);
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
@@ -80,29 +81,29 @@ const SecurityCameraScreen: React.FC = () => {
   // WebSocket Connection
   const initializeConnection = () => {
     const socket = io(SERVER_URL, {
-      transports: ['websocket'],
+      transports: ["websocket"],
       reconnection: true,
       reconnectionDelay: 1000,
     });
 
-    socket.on('connect', () => {
-      console.log('Connected to server');
+    socket.on("connect", () => {
+      console.log("Connected to server");
       setIsConnected(true);
       setStreamUrl(`${SERVER_URL}/api/video_feed?t=${Date.now()}`);
-      socket.emit('request_status');
+      socket.emit("request_status");
     });
 
-    socket.on('disconnect', () => {
-      console.log('Disconnected from server');
+    socket.on("disconnect", () => {
+      console.log("Disconnected from server");
       setIsConnected(false);
     });
 
-    socket.on('detection_update', (data: DetectionResult) => {
+    socket.on("detection_update", (data: DetectionResult) => {
       setDetection(data);
       setIsLoading(false);
     });
 
-    socket.on('connected', () => {
+    socket.on("connected", () => {
       setIsConnected(true);
     });
 
@@ -121,7 +122,7 @@ const SecurityCameraScreen: React.FC = () => {
       }
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching status:', error);
+      console.error("Error fetching status:", error);
       setIsLoading(false);
     }
   };
@@ -133,7 +134,7 @@ const SecurityCameraScreen: React.FC = () => {
       const data: Statistics = await response.json();
       setStatistics(data);
     } catch (error) {
-      console.error('Error fetching statistics:', error);
+      console.error("Error fetching statistics:", error);
     }
   };
 
@@ -141,20 +142,20 @@ const SecurityCameraScreen: React.FC = () => {
   const toggleArmed = async (value: boolean) => {
     try {
       const response = await fetch(`${SERVER_URL}/api/arm`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ armed: value }),
       });
 
       if (response.ok) {
         setIsArmed(value);
         Alert.alert(
-          'Success',
-          value ? 'System is now armed' : 'System is now disarmed'
+          "Success",
+          value ? "System is now armed" : "System is now disarmed"
         );
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to update armed status');
+      Alert.alert("Error", "Failed to update armed status");
     }
   };
 
@@ -168,29 +169,29 @@ const SecurityCameraScreen: React.FC = () => {
   // Get Threat Color
   const getThreatColor = (level: string): string => {
     const colors: { [key: string]: string } = {
-      LOW: '#10b981',
-      MEDIUM: '#f59e0b',
-      HIGH: '#ef4444',
-      CRITICAL: '#dc2626',
+      LOW: "#10b981",
+      MEDIUM: "#f59e0b",
+      HIGH: "#ef4444",
+      CRITICAL: "#dc2626",
     };
-    return colors[level] || '#6b7280';
+    return colors[level] || "#6b7280";
   };
 
   // Get Threat Icon
   const getThreatIcon = (level: string): keyof typeof Ionicons.glyphMap => {
     const icons: { [key: string]: keyof typeof Ionicons.glyphMap } = {
-      LOW: 'shield-checkmark',
-      MEDIUM: 'warning',
-      HIGH: 'alert',
-      CRITICAL: 'alert-circle',
+      LOW: "shield-checkmark",
+      MEDIUM: "warning",
+      HIGH: "alert",
+      CRITICAL: "alert-circle",
     };
-    return icons[level] || 'help-circle';
+    return icons[level] || "help-circle";
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1e293b', '#0f172a']} style={styles.header}>
+      <LinearGradient colors={["#1e293b", "#0f172a"]} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <Ionicons name="videocam" size={28} color="#fff" />
@@ -200,11 +201,11 @@ const SecurityCameraScreen: React.FC = () => {
                 <View
                   style={[
                     styles.statusDot,
-                    { backgroundColor: isConnected ? '#10b981' : '#ef4444' },
+                    { backgroundColor: isConnected ? "#10b981" : "#ef4444" },
                   ]}
                 />
                 <Text style={styles.statusText}>
-                  {isConnected ? 'Connected' : 'Disconnected'}
+                  {isConnected ? "Connected" : "Disconnected"}
                 </Text>
               </View>
             </View>
@@ -215,8 +216,8 @@ const SecurityCameraScreen: React.FC = () => {
             <Switch
               value={isArmed}
               onValueChange={toggleArmed}
-              trackColor={{ false: '#64748b', true: '#10b981' }}
-              thumbColor={isArmed ? '#fff' : '#f1f5f9'}
+              trackColor={{ false: "#64748b", true: "#10b981" }}
+              thumbColor={isArmed ? "#fff" : "#f1f5f9"}
             />
           </View>
         </View>
@@ -267,7 +268,10 @@ const SecurityCameraScreen: React.FC = () => {
             <View
               style={[
                 styles.threatBadge,
-                { backgroundColor: getThreatColor(detection.threat.level) + '20' },
+                {
+                  backgroundColor:
+                    getThreatColor(detection.threat.level) + "20",
+                },
               ]}
             >
               <Text
@@ -350,7 +354,7 @@ const SecurityCameraScreen: React.FC = () => {
                     styles.faceStatusDot,
                     {
                       backgroundColor:
-                        face.status === 'AUTHORIZED' ? '#10b981' : '#ef4444',
+                        face.status === "AUTHORIZED" ? "#10b981" : "#ef4444",
                     },
                   ]}
                 />
@@ -390,14 +394,14 @@ const SecurityCameraScreen: React.FC = () => {
 
             <View style={styles.statsRow}>
               <View style={styles.statBox}>
-                <Text style={[styles.statBoxValue, { color: '#10b981' }]}>
+                <Text style={[styles.statBoxValue, { color: "#10b981" }]}>
                   {statistics.authorized_detections}
                 </Text>
                 <Text style={styles.statBoxLabel}>Authorized</Text>
               </View>
 
               <View style={styles.statBox}>
-                <Text style={[styles.statBoxValue, { color: '#ef4444' }]}>
+                <Text style={[styles.statBoxValue, { color: "#ef4444" }]}>
                   {statistics.unauthorized_detections}
                 </Text>
                 <Text style={styles.statBoxLabel}>Unauthorized</Text>
@@ -433,6 +437,9 @@ const SecurityCameraScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Shared Bottom Navigation */}
+      <BottomNav />
     </View>
   );
 };

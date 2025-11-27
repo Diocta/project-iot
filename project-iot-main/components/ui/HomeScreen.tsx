@@ -1,6 +1,8 @@
 // components/ui/HomeScreen.tsx
+import BottomNav from "@/components/BottomNav";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -82,6 +84,9 @@ export default function HomeScreen() {
     garage: false,
     clothesline: false,
   });
+
+  // Router for navigation between tabs
+  const router = useRouter();
 
   // Connect to MQTT on mount
   useEffect(() => {
@@ -281,15 +286,17 @@ export default function HomeScreen() {
         }
       }
 
+      // Show result alert and auto-close after 2 seconds
+      console.log("Voice Command Result:", {
+        action: data.action,
+        device: data.device,
+        response: data.response,
+      });
+
+      // Close modal after 2 seconds (transcript visible during this time)
       setTimeout(() => {
-        Alert.alert(
-          "Voice Command",
-          `Action: ${data.action || "-"}\nDevice: ${
-            data.device || "-"
-          }\nResponse: ${data.response || ""}`
-        );
         setModalVisible(false);
-      }, 500);
+      }, 2000);
     } catch (err) {
       console.log("Error:", err);
       setTranscript("Tidak dapat menghubungi server");
@@ -773,28 +780,21 @@ export default function HomeScreen() {
           <View style={styles.modalContent}>
             {loading && <ActivityIndicator size="large" color="#7C3AED" />}
             <Text style={styles.modalText}>{transcript}</Text>
+            {!loading && (
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Close</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
 
       {/* BOTTOM NAV */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="home" size={26} color="#7C3AED" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="videocam" size={26} color="#9CA3AF" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.micBtn} onPress={handleMicPress}>
-          <Ionicons name="mic" size={32} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="stats-chart" size={26} color="#9CA3AF" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="person" size={26} color="#9CA3AF" />
-        </TouchableOpacity>
-      </View>
+      {/* Shared Bottom Navigation */}
+      <BottomNav onMicPress={handleMicPress} />
     </View>
   );
 }
